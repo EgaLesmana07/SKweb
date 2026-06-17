@@ -577,3 +577,5 @@ app.get('/api/backup', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server aktif menggunakan Supabase di port http://localhost:${PORT}`);
 });
+// Tambahkan baris ini untuk Vercel
+module.exports = app;
