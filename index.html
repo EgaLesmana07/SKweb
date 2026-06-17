@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
         .sidebar-item-active { background-color: #3b82f6; color: white !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
@@ -198,10 +198,22 @@
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-                        <div class="bg-gradient-to-br from-blue-600 to-blue-700 p-6 rounded-3xl text-white shadow-lg sm:col-span-2 lg:col-span-1">
-                            <p class="text-blue-100 text-xs sm:text-sm mb-1 font-medium">Total Model di Database</p>
-                            <h4 class="text-3xl sm:text-4xl font-black" id="stat-model">0</h4>
+                        
+                        <!-- CARD TOTAL MODEL (CLICKABLE UNTUK LOKASI SUMMARY) -->
+                        <div onclick="openLokasiSummary()" class="bg-gradient-to-br from-blue-600 to-blue-700 p-6 rounded-3xl text-white shadow-lg sm:col-span-2 lg:col-span-1 cursor-pointer hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-white/20 transition-all"></div>
+                            <div class="relative z-10 flex flex-col h-full justify-center">
+                                <div class="flex items-start justify-between">
+                                    <p class="text-blue-100 text-xs sm:text-sm mb-1 font-medium">Total Model di Database</p>
+                                    <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white backdrop-blur-sm group-hover:bg-white/30 transition-colors">
+                                        <i class="fa-solid fa-expand text-xs"></i>
+                                    </div>
+                                </div>
+                                <h4 class="text-3xl sm:text-4xl font-black mt-2" id="stat-model">0</h4>
+                                <p class="text-[10px] text-blue-200 mt-2 font-medium"><i class="fa-solid fa-hand-pointer mr-1"></i> Klik untuk melihat rincian lokasi</p>
+                            </div>
                         </div>
+
                         <div class="bg-white p-6 rounded-3xl border border-emerald-100 flex flex-col justify-center shadow-sm">
                             <p class="text-gray-400 text-xs sm:text-sm font-medium">Total Transaksi Masuk (IN)</p>
                             <h4 class="text-2xl sm:text-3xl font-black text-emerald-600 mt-1" id="stat-in">0</h4>
@@ -255,7 +267,7 @@
                             <h3 class="text-base font-black text-gray-800">STOCK CARD BARANG</h3>
                             <p class="text-xs text-gray-400 mt-1">Gunakan formulir list dinamis di bawah ini untuk input batch.</p>
                         </div>
-                        <button onclick="addTransactionRow()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-100 shrink-0">
+                        <button id="btn-add-row-action" onclick="addTransactionRow()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-100 shrink-0">
                             <i class="fa-solid fa-plus text-xs"></i> Tambah Baris Transaksi
                         </button>
                     </div>
@@ -494,6 +506,32 @@
         </div>
     </div>
 
+    <!-- Modal Lokasi Summary & Detail -->
+    <div id="modal-lokasi-summary" class="hidden fixed inset-0 z-[160] flex items-center justify-center p-4 modal-overlay animate-fade-in">
+        <div class="bg-white w-full max-w-4xl rounded-[24px] p-6 sm:p-8 shadow-2xl scale-in max-h-[90vh] flex flex-col relative overflow-hidden">
+            <button onclick="closeLokasiModal()" class="absolute top-6 right-6 text-gray-400 hover:text-rose-500 transition-colors z-10 bg-white rounded-full p-1 shadow-sm border border-gray-100">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            
+            <div class="mb-5 border-b border-gray-100 pb-4 shrink-0 pr-8 flex items-center gap-3">
+                <button id="btn-back-lokasi" onclick="renderLokasiList()" class="hidden w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors shrink-0">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <h3 id="lokasi-modal-title" class="text-lg sm:text-xl font-black text-gray-800 flex items-center gap-2 truncate">
+                    <i class="fa-solid fa-layer-group text-blue-500"></i> Rekapitulasi Lokasi & Model
+                </h3>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-2 -mr-2" id="lokasi-modal-content">
+                <!-- Content injected here via JS -->
+            </div>
+            
+            <div class="mt-4 pt-4 border-t border-gray-100 text-right shrink-0">
+                <button onclick="closeLokasiModal()" class="px-6 py-3 sm:py-2.5 w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm transition-colors">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Kartu Detail Database (Master & History) -->
     <div id="modal-detail-db" class="hidden fixed inset-0 z-[150] flex items-center justify-center p-4 modal-overlay animate-fade-in">
         <div class="bg-white w-full max-w-4xl rounded-[24px] p-6 sm:p-8 shadow-2xl scale-in max-h-[90vh] overflow-hidden flex flex-col relative">
@@ -660,7 +698,6 @@
                         </div>
                     </div>
 
-                    <!-- Sesuai instruksi: Menampilkan informasi Picker dan Approval di Detail modal transaksi -->
                     <div class="md:col-span-2 mt-2" id="det-trans-auth-section">
                         <p class="text-[10px] font-black text-gray-400 uppercase mb-1 border-b border-gray-100 pb-1">PIC</p>
                         <div class="grid grid-cols-2 gap-4">
@@ -787,7 +824,7 @@
                 </div>
                 <div>
                     <label class="text-[10px] font-black text-gray-400 uppercase ml-1">No. RO</label>
-                    <input type="text" id="hist-ro" placeholder="No RO" class="w-full p-3.5 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-100 text-sm">
+                    <input type="text" id="hist-ro" placeholder="No RO" class="w-full p-3.5 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 text-sm">
                 </div>
             </div>
             <div class="flex gap-3 mt-8">
@@ -871,6 +908,7 @@
             }
         }
 
+        // Debounce helper
         function debounce(func, wait) {
             let timeout;
             return function(...args) {
@@ -922,7 +960,178 @@
         }
 
         // ==========================================
-        // FITUR DETAIL MODAL (Popup Kartu)
+        // FITUR DETEKSI & PERBAIKAN SINKRONISASI REALTIME
+        // ==========================================
+        function refreshAutocomplete(callback) {
+            fetch('/api/autocomplete')
+                .then(res => res.json())
+                .then(data => {
+                    autocompleteCache = data;
+                    if (callback) callback();
+                })
+                .catch(err => {
+                    console.error("Sinkronisasi gagal:", err);
+                    if (callback) callback();
+                });
+        }
+
+        // ==========================================
+        // FITUR DETAIL LOKASI & MODEL (MODAL REKAPITULASI)
+        // ==========================================
+        function openLokasiSummary() {
+            document.getElementById('modal-lokasi-summary').classList.remove('hidden');
+            renderLokasiList();
+        }
+
+        function closeLokasiModal() {
+            document.getElementById('modal-lokasi-summary').classList.add('hidden');
+        }
+
+        function renderLokasiList() {
+            document.getElementById('btn-back-lokasi').classList.add('hidden');
+            document.getElementById('lokasi-modal-title').innerHTML = `<i class="fa-solid fa-layer-group text-blue-500"></i> Rekapitulasi Lokasi & Model`;
+            
+            const contentDiv = document.getElementById('lokasi-modal-content');
+            
+            // Mengelompokkan berdasarkan Lokasi menggunakan autocompleteCache
+            const grouped = {};
+            autocompleteCache.forEach(item => {
+                let lokasis = [];
+                if (item.lokasi) {
+                    lokasis = item.lokasi.split(',').map(l => l.trim()).filter(Boolean);
+                }
+                if (lokasis.length === 0) {
+                    lokasis = ['Tanpa Lokasi'];
+                }
+
+                lokasis.forEach(loc => {
+                    if (!grouped[loc]) grouped[loc] = new Set();
+                    if (item.model) grouped[loc].add(item.model);
+                });
+            });
+
+            // PERBAIKAN URUTAN: Menggunakan localeCompare dengan { numeric: true }
+            // agar berurutan secara natural (A1-A21, B1-B21, D1-D21)
+            const lokasiKeys = Object.keys(grouped).sort((a, b) => {
+                return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+            });
+            
+            if (lokasiKeys.length === 0) {
+                contentDiv.innerHTML = `<div class="text-center py-10 text-gray-400 font-bold flex flex-col items-center"><i class="fa-solid fa-box-open text-4xl mb-3 text-gray-300"></i> Data Master kosong atau belum dimuat.</div>`;
+                return;
+            }
+
+            let html = `<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">`;
+            lokasiKeys.forEach(loc => {
+                const uniqueModelsCount = grouped[loc].size;
+                // Mengambil sampel model untuk pratinjau (preview) di kartu
+                const modelsArray = Array.from(grouped[loc]).sort((a, b) => {
+                    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+                });
+                const previewModels = modelsArray.slice(0, 3).join(', ') + (modelsArray.length > 3 ? '...' : '');
+
+                html += `
+                    <div onclick="renderLokasiDetail('${loc}')" class="bg-white border border-gray-200 hover:border-blue-400 hover:shadow-md rounded-2xl p-5 cursor-pointer transition-all flex flex-col items-center text-center group h-full">
+                        <div class="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                            <i class="fa-solid fa-warehouse"></i>
+                        </div>
+                        <h4 class="font-black text-gray-800 text-lg mb-1 truncate w-full" title="${loc}">${loc}</h4>
+                        <p class="text-[10px] text-gray-400 font-medium mb-4 h-6 overflow-hidden leading-tight" title="${modelsArray.join(', ')}">${previewModels || 'Tidak ada model'}</p>
+                        <div class="mt-auto">
+                            <span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm">${uniqueModelsCount} Model</span>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            contentDiv.innerHTML = html;
+        }
+
+        function renderLokasiDetail(lokasiName) {
+            document.getElementById('btn-back-lokasi').classList.remove('hidden');
+            document.getElementById('lokasi-modal-title').innerHTML = `<i class="fa-solid fa-map-location-dot text-blue-500"></i> Detail Lokasi: <span class="text-gray-800">${lokasiName}</span>`;
+            
+            const contentDiv = document.getElementById('lokasi-modal-content');
+            
+            // Dapatkan seluruh item yang termasuk di dalam lokasi yang di klik
+            const items = autocompleteCache.filter(item => {
+                if (!item.lokasi && lokasiName === 'Tanpa Lokasi') return true;
+                if (!item.lokasi) return false;
+                const lokasis = item.lokasi.split(',').map(l => l.trim()).filter(Boolean);
+                return lokasis.includes(lokasiName);
+            });
+
+            // Urutkan rincian model di dalam tabel lokasi secara natural juga
+            items.sort((a, b) => {
+                const modelA = a.model || '';
+                const modelB = b.model || '';
+                return modelA.localeCompare(modelB, undefined, { numeric: true, sensitivity: 'base' });
+            });
+
+            if (items.length === 0) {
+                contentDiv.innerHTML = `<div class="text-center py-10 text-gray-400 font-bold">Tidak ada rincian item di lokasi ini</div>`;
+                return;
+            }
+
+            let html = `
+                <div class="bg-gray-50 rounded-xl p-4 mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border border-gray-100">
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Item Part Number</p>
+                        <p class="text-xl font-black text-gray-800">${items.length} <span class="text-sm font-medium text-gray-500">Item</span></p>
+                    </div>
+                    <div class="flex gap-6 sm:gap-4">
+                        <div class="text-left sm:text-right">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Stok YP</p>
+                            <p class="text-lg font-black text-blue-600">${items.reduce((sum, i) => sum + (parseInt(i.yp) || 0), 0)}</p>
+                        </div>
+                        <div class="text-left sm:text-right border-l border-gray-200 pl-6 sm:pl-4">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Stok YS</p>
+                            <p class="text-lg font-black text-orange-500">${items.reduce((sum, i) => sum + (parseInt(i.ys) || 0), 0)}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
+                    <table class="w-full text-left min-w-[700px]">
+                        <thead class="bg-white text-[11px] font-bold text-gray-400 uppercase sticky top-0 z-10 border-b border-gray-200 shadow-sm">
+                            <tr>
+                                <th class="px-5 py-3.5">Model</th>
+                                <th class="px-5 py-3.5">Part Number (PN)</th>
+                                <th class="px-5 py-3.5">Deskripsi / Material</th>
+                                <th class="px-5 py-3.5 text-center bg-blue-50/50">YP</th>
+                                <th class="px-5 py-3.5 text-center bg-orange-50/50">YS</th>
+                                <th class="px-5 py-3.5 text-center">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 text-xs text-gray-700 bg-white">
+            `;
+
+            items.forEach(item => {
+                const yp = parseInt(item.yp) || 0;
+                const ys = parseInt(item.ys) || 0;
+                const total = yp + ys;
+                html += `
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-5 py-3 font-bold text-gray-800">${item.model || '-'}</td>
+                        <td class="px-5 py-3 font-black text-blue-600">${item.pn || '-'}</td>
+                        <td class="px-5 py-3 text-gray-500 max-w-[200px] truncate font-medium" title="${item.description}">${item.description || '-'}</td>
+                        <td class="px-5 py-3 text-center font-bold text-blue-600 bg-blue-50/30">${yp}</td>
+                        <td class="px-5 py-3 text-center font-bold text-orange-500 bg-orange-50/30">${ys}</td>
+                        <td class="px-5 py-3 text-center font-black text-emerald-600">${total}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            contentDiv.innerHTML = html;
+        }
+
+        // ==========================================
+        // FITUR DETAIL MODAL (Popup Kartu Lainnya)
         // ==========================================
 
         function closeDetailModal(modalId) {
@@ -952,7 +1161,7 @@
                 .then(res => res.json())
                 .then(res => {
                     const data = res.data || [];
-                    const exactMatches = data.filter(h => String(h.pn).toLowerCase() === String(item.pn).toLowerCase());
+                    const exactMatches = data.filter(h => String(h.pn).toLowerCase().trim() === String(item.pn).toLowerCase().trim());
                     
                     if(exactMatches.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400 italic">Belum ada riwayat transaksi untuk PN ini.</td></tr>`;
@@ -994,7 +1203,6 @@
                 statusText = 'Completed';
                 statusClass = 'bg-emerald-100 text-emerald-700';
 
-                // Tampilkan section Picker & Approval untuk menu History SC
                 if (authSection) authSection.classList.remove('hidden');
                 if (wrapperPicker) wrapperPicker.classList.remove('hidden');
                 if (wrapperApproval) wrapperApproval.classList.remove('hidden');
@@ -1004,7 +1212,6 @@
                 statusText = 'Waiting Approval';
                 statusClass = 'bg-orange-100 text-orange-700 animate-pulse';
 
-                // Tampilkan section Picker tetapi sembunyikan Approval untuk menu SC Pending
                 if (authSection) authSection.classList.remove('hidden');
                 if (wrapperPicker) wrapperPicker.classList.remove('hidden');
                 if (wrapperApproval) wrapperApproval.classList.add('hidden');
@@ -1014,7 +1221,6 @@
                 statusText = 'Archived';
                 statusClass = 'bg-gray-200 text-gray-600';
 
-                // Sembunyikan section Picker & Approval untuk Backup
                 if (authSection) authSection.classList.add('hidden');
             }
 
@@ -1035,7 +1241,6 @@
             document.getElementById('det-trans-odf').innerText = item.odf || '-';
             document.getElementById('det-trans-ro').innerText = item.noRo || '-';
 
-            // Memasukkan data Picker dan Approval
             const elPicker = document.getElementById('det-trans-picker');
             const elApproval = document.getElementById('det-trans-approval');
             if (elPicker) elPicker.innerText = item.picker || '-';
@@ -1070,9 +1275,9 @@
         }
 
         function showLoginModal(show) {
-            const loginScreen = document.getElementById('login-screen');
+            const loginScreenEl = document.getElementById('login-screen');
             if (show) {
-                loginScreen.classList.remove('hidden');
+                loginScreenEl.classList.remove('hidden');
                 const loginForm = document.getElementById('login-form');
                 if (loginForm) loginForm.reset();
                 document.getElementById('login-username').value = '';
@@ -1086,7 +1291,7 @@
                     icon.className = "fa-solid fa-eye text-sm";
                 }
             } else {
-                loginScreen.classList.add('hidden');
+                loginScreenEl.classList.add('hidden');
             }
         }
 
@@ -1140,7 +1345,7 @@
             .catch(err => {
                 btnSubmit.disabled = false;
                 btnSubmit.innerHTML = `<span>MASUK KE SISTEM</span> <i class="fa-solid fa-arrow-right text-xs"></i>`;
-                errorText.innerText = "Koneksi Node.js gagal: " + (err.message || "Unknown error");
+                errorText.innerText = "Koneksi backend gagal: " + (err.message || "Unknown error");
                 errorDiv.classList.remove('hidden');
             });
         }
@@ -1361,6 +1566,13 @@
             } else {
                 document.getElementById('page-title').innerText = tabId;
             }
+
+            if (tabId === 'transaksi') {
+                transRows.forEach(rowId => {
+                    updateRowStockInfo(rowId);
+                });
+            }
+
             if (window.innerWidth < 768 && isSidebarOpen) {
                 toggleSidebar();
             }
@@ -1369,14 +1581,14 @@
         function loadInitialData() {
             showLoading(true, "Memuat Data Warehouse...");
             const roleUpper = getRoleUpper();
-            let totalSteps = 4; 
+            let totalSteps = 5; 
             if (roleUpper === 'GUEST') {
-                totalSteps = 3; 
+                totalSteps = 4; 
             } else {
-                totalSteps = 5; 
+                totalSteps = 6; 
             }
             if (roleUpper === 'SUPERADMIN') {
-                totalSteps = 6;
+                totalSteps = 7;
             }
             
             let counter = 0;
@@ -1385,12 +1597,7 @@
                 if (counter >= totalSteps) showLoading(false);
             };
 
-            // Fetch Autocomplete
-            fetch('/api/autocomplete')
-                .then(res => res.json())
-                .then(data => { autocompleteCache = data; })
-                .catch(err => console.error("Autocomplete err:", err));
-
+            refreshAutocomplete(() => checkDone());
             fetchDatabase(1, () => checkDone());
             fetchHistory(1, () => checkDone());
             
@@ -1477,7 +1684,7 @@
             document.getElementById('reg-form-icon').className = "fa-solid fa-user-pen text-blue-500";
             
             document.getElementById('reg-user-rownum').value = user.rowNum;
-            document.getElementById('reg-fullname').value = user.fullname;
+            document.getElementById('reg-fullname').value = user.fullName;
             document.getElementById('reg-username').value = user.username;
             document.getElementById('reg-password').value = user.password;
             document.getElementById('reg-role').value = user.role;
@@ -1526,7 +1733,7 @@
                 btnSubmit.innerHTML = originalHtml;
                 if (data.success) {
                     showToast(isEdit ? "Update Berhasil" : "Registrasi Berhasil", data.message, "success");
-                    closeUserModal(); // Menutup popup jika berhasil
+                    closeUserModal(); 
                     loadUsers();
                 } else {
                     showToast("Gagal", data.message, "error");
@@ -1535,7 +1742,7 @@
             .catch(err => {
                 btnSubmit.disabled = false;
                 btnSubmit.innerHTML = originalHtml;
-                showToast("Kesalahan Server", "Gagal menghubungi server untuk mendaftarkan/memperbarui akun.", "error");
+                showToast("Kesalahan Server", "Gagal mendaftarkan/memperbarui akun pengguna.", "error");
             });
         }
 
@@ -1670,6 +1877,39 @@
             container.innerHTML = html;
         }
 
+        // ==========================================
+        // SMART SEARCH ALGORITHM (UNTUK PN & MODEL)
+        // ==========================================
+        function isRowMatch(row, searchStr) {
+            if (!searchStr) return false;
+            const normalizedSearch = searchStr.trim().toLowerCase();
+            const normalizedPN = String(row.pn || '').trim().toLowerCase();
+            
+            if (!normalizedPN) return false;
+
+            if (normalizedSearch.includes(normalizedPN)) {
+                return true;
+            }
+
+            if (normalizedPN.includes(normalizedSearch)) {
+                return true;
+            }
+
+            const normalizedModel = String(row.model || '').trim().toLowerCase();
+            if (normalizedModel.includes(normalizedSearch)) return true;
+            
+            const normalizedLokasi = String(row.lokasi || '').trim().toLowerCase();
+            if (normalizedLokasi.includes(normalizedSearch)) return true;
+
+            const keywords = normalizedSearch.split(/\s+/).filter(Boolean);
+            if (keywords.length > 0) {
+                const combinedRowText = `${row.lokasi || ''} ${row.model || ''} ${row.pn || ''} ${row.description || ''}`.toLowerCase();
+                return keywords.every(kw => combinedRowText.includes(kw));
+            }
+
+            return false;
+        }
+
         // --- Fitur Row Transaksi ---
         function addTransactionRow() {
             const roleUpper = getRoleUpper();
@@ -1681,7 +1921,6 @@
             rowDiv.id = `tr-row-${rowId}`;
             rowDiv.className = "bg-white md:bg-transparent p-4 md:p-0 rounded-2xl md:rounded-none border border-gray-100 md:border-none shadow-sm md:shadow-none md:grid md:grid-cols-12 gap-3 items-start transition-all duration-200 hover:bg-slate-50/40";
             
-            // Picker disiapkan otomatis dari session user yang login tetapi disembunyikan/tidak ditampilkan sesuai aturan/rules
             const currentPickerName = currentUser ? currentUser.fullName : 'Guest User';
 
             rowDiv.innerHTML = `
@@ -1697,9 +1936,9 @@
                     <div id="info-${rowId}" class="text-[9px] text-gray-400 font-medium pl-1 leading-relaxed break-words">
                         Masukkan PN untuk memuat rincian stok...
                     </div>
+                    <input type="hidden" id="real-pn-${rowId}">
                     <input type="hidden" id="model-${rowId}">
                     <input type="hidden" id="material-${rowId}">
-                    <!-- Picker diisi otomatis dan tidak bisa diedit/disembunyikan -->
                     <input type="hidden" id="picker-${rowId}" value="${currentPickerName}">
                 </div>
                 
@@ -1792,7 +2031,6 @@
             document.getElementById('trans-item-count').innerText = transRows.length;
         }
 
-        // (Other logic remains unchanged...)
         function updateRowTypeColor(rowId) {
             const select = document.getElementById(`type-${rowId}`);
             if (select.value === 'IN') {
@@ -1815,8 +2053,8 @@
                 infoDiv.innerText = "Masukkan PN untuk memuat rincian stok...";
                 return;
             }
-            const searchVal = typedPn.toLowerCase();
-            let matches = autocompleteCache.filter(x => String(x.pn).toLowerCase().includes(searchVal));
+            
+            let matches = autocompleteCache.filter(x => isRowMatch(x, typedPn));
             if (matches.length === 0) {
                 infoDiv.innerHTML = `<span class="text-rose-500 italic font-bold">PN tidak ditemukan</span>`;
                 return;
@@ -1827,6 +2065,9 @@
                 if (locMatches.length > 0) selectedMatch = locMatches[0];
             }
             if (!selectedMatch) selectedMatch = matches[0];
+            
+            const realPnInput = document.getElementById(`real-pn-${rowId}`);
+            if (realPnInput) realPnInput.value = selectedMatch.pn;
             
             modelInput.value = selectedMatch.model || "-";
             materialInput.value = selectedMatch.description || "-";
@@ -1857,15 +2098,18 @@
             const ypInput = document.getElementById(`yp-${rowId}`);
             const ysInput = document.getElementById(`ys-${rowId}`);
             if (!pnInput || !lokasiSelect || !ypInput || !ysInput) return;
-            const pnVal = pnInput.value.trim().toLowerCase();
+            const pnVal = pnInput.value.trim();
             const lokasiVal = lokasiSelect.value;
             const ypVal = parseInt(ypInput.value) || 0;
             const ysVal = parseInt(ysInput.value) || 0;
             if (!pnVal || !lokasiVal) return;
-            const match = autocompleteCache.find(x => 
-                String(x.pn).trim().toLowerCase() === pnVal && 
-                String(x.lokasi).trim().toLowerCase() === lokasiVal.trim().toLowerCase()
-            );
+            
+            const match = autocompleteCache.find(x => {
+                const isLocMatch = String(x.lokasi).trim().toLowerCase() === lokasiVal.trim().toLowerCase();
+                if (!isLocMatch) return false;
+                return isRowMatch(x, pnVal);
+            });
+
             const maxYP = match ? (parseInt(match.yp) || 0) : 0;
             const maxYS = match ? (parseInt(match.ys) || 0) : 0;
             if (ypVal > maxYP) {
@@ -1892,11 +2136,8 @@
                 if (datalist) datalist.innerHTML = "";
                 return;
             }
-            const searchVal = val.trim().toLowerCase();
-            const matches = autocompleteCache.filter(x => 
-                String(x.pn).toLowerCase().includes(searchVal) ||
-                String(x.model).toLowerCase().includes(searchVal)
-            );
+            
+            const matches = autocompleteCache.filter(x => isRowMatch(x, val));
             if (datalist) {
                 const uniquePNs = [...new Set(matches.map(x => x.pn))];
                 datalist.innerHTML = uniquePNs.slice(0, 10).map(pn => `<option value="${pn}"></option>`).join('');
@@ -1932,6 +2173,8 @@
                 updateRowStockInfo(rowId);
                 validateRowStock(rowId);
             } else {
+                const realPnInput = document.getElementById(`real-pn-${rowId}`);
+                if (realPnInput) realPnInput.value = "";
                 infoDiv.innerHTML = `<span class="text-rose-500 italic font-bold">PN tidak ditemukan</span>`;
                 modelInput.value = "";
                 materialInput.value = "";
@@ -1954,7 +2197,10 @@
             let validationError = null;
             for (let i = 0; i < transRows.length; i++) {
                 const rowId = transRows[i];
-                const pn = document.getElementById(`pn-${rowId}`).value.trim();
+                const inputPn = document.getElementById(`pn-${rowId}`).value.trim();
+                const realPnInput = document.getElementById(`real-pn-${rowId}`);
+                const realPn = realPnInput ? realPnInput.value.trim() : "";
+                const pn = realPn ? realPn : inputPn; 
                 const lokasi = document.getElementById(`lokasi-${rowId}`).value;
                 const model = document.getElementById(`model-${rowId}`).value || "-";
                 const material = document.getElementById(`material-${rowId}`).value || "-";
@@ -1970,10 +2216,12 @@
                 if (!lokasi) { validationError = `Baris #${i + 1}: Lokasi penempatan barang belum dipilih!`; break; }
                 if (yp === 0 && ys === 0) { validationError = `Baris #${i + 1}: Masukkan minimal jumlah Qty transaksi!`; break; }
                 if (type === "OUT") {
-                    const match = autocompleteCache.find(x => 
-                        String(x.pn).trim().toLowerCase() === pn.toLowerCase() && 
-                        String(x.lokasi).trim().toLowerCase() === lokasi.trim().toLowerCase()
-                    );
+                    const match = autocompleteCache.find(x => {
+                        const isLocMatch = String(x.lokasi).trim().toLowerCase() === lokasi.trim().toLowerCase();
+                        if (!isLocMatch) return false;
+                        return isRowMatch(x, pn);
+                    });
+
                     const maxYP = match ? (parseInt(match.yp) || 0) : 0;
                     const maxYS = match ? (parseInt(match.ys) || 0) : 0;
                     if (yp > maxYP) { validationError = `Baris #${i + 1}: Qty YP OUT (${yp}) melebihi stok di lokasi "${lokasi}" (${maxYP})!`; break; }
@@ -1993,7 +2241,6 @@
             btn.className = "flex-[2] sm:flex-none px-10 py-3.5 bg-gray-400 text-white font-black rounded-xl text-xs cursor-not-allowed";
             showLoading(true, "Memproses Data Transaksi...");
             
-            // Mengirim payload transaksi beserta penginput (picker) global sebagai pengaman
             const payload = {
                 items: itemsToSave,
                 picker: currentUser ? currentUser.fullName : 'Guest'
@@ -2020,12 +2267,9 @@
                 fetchPending(1);
                 loadChartOptimized();
                 
-                fetch('/api/autocomplete')
-                    .then(r => r.json())
-                    .then(ac => {
-                        autocompleteCache = ac;
-                        showLoading(false);
-                    });
+                refreshAutocomplete(() => {
+                    showLoading(false);
+                });
             })
             .catch(err => {
                 btn.disabled = false;
@@ -2258,7 +2502,10 @@
                 btn.innerText = originalText;
                 btn.className = "flex-[2] py-3.5 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 shadow-lg text-sm";
                 closeModal();
-                fetchDatabase(dbCurrentPage, () => showLoading(false));
+                
+                fetchDatabase(dbCurrentPage, () => {
+                    refreshAutocomplete(() => showLoading(false));
+                });
                 showToast("Sukses", isEdit ? "Item Master Berhasil Diperbarui!" : "Item Baru Berhasil Ditambahkan ke Database!", "success");
             })
             .catch(err => {
@@ -2318,7 +2565,7 @@
             btn.disabled = true;
             btn.innerText = "MENYIMPAN...";
             btn.className = "flex-[2] py-3.5 bg-gray-400 text-white rounded-2xl font-black cursor-not-allowed text-sm";
-            showLoading(true, "Menyimpan Perubahan History...");
+            showLoading(true, "Menyimpan Perubahan History SC...");
             
             fetch(`/api/history/${obj.rowNum}`, {
                 method: 'PUT',
@@ -2336,7 +2583,10 @@
                 closeHistoryModal();
                 fetchHistory(historyCurrentPage);
                 fetchDatabase(dbCurrentPage);
-                loadChartOptimized(() => showLoading(false));
+                
+                loadChartOptimized(() => {
+                    refreshAutocomplete(() => showLoading(false));
+                });
                 showToast("Sukses", "Log Transaksi History Berhasil Diperbarui!", "success");
             })
             .catch(err => {
@@ -2410,13 +2660,19 @@
                 closeConfirmModal();
                 
                 if (pendingDeleteType === 'db') {
-                    fetchDatabase(dbCurrentPage, () => showLoading(false));
+                    fetchDatabase(dbCurrentPage, () => {
+                        refreshAutocomplete(() => showLoading(false));
+                    });
                     showToast("Terhapus", "Data berhasil dihapus dari Database Master.", "success");
                 } else if (pendingDeleteType === 'history') {
-                    fetchHistory(historyCurrentPage, () => showLoading(false));
+                    fetchHistory(historyCurrentPage, () => {
+                        refreshAutocomplete(() => showLoading(false));
+                    });
                     showToast("Terhapus", "Log berhasil dihapus dari History SC.", "success");
                 } else if (pendingDeleteType === 'pending') {
-                    fetchPending(pendingCurrentPage, () => showLoading(false));
+                    fetchPending(pendingCurrentPage, () => {
+                        refreshAutocomplete(() => showLoading(false));
+                    });
                     showToast("Terhapus", "Transaksi Pending berhasil dibatalkan dan dihapus.", "success");
                 } else if (pendingDeleteType === 'user') {
                     loadUsers(() => showLoading(false));
@@ -2445,7 +2701,6 @@
             pendingApproveRow = null;
         }
 
-        // DIUBAH: Mengirimkan info approvedBy (User yang menyetujui transaksi pending OUT) ke API
         function executeApprove() {
             if (!pendingApproveRow) return;
             const btn = document.getElementById('confirm-approve-btn');
@@ -2472,9 +2727,13 @@
                 btn.className = "flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-sm shadow-lg transition-colors";
                 closeApproveModal();
                 showToast("Sukses", "Transaksi berhasil diapprove dan dipindahkan ke History.", "success");
+                
                 fetchDatabase(dbCurrentPage);
                 fetchHistory(1);
-                fetchPending(pendingCurrentPage, () => showLoading(false));
+                
+                fetchPending(pendingCurrentPage, () => {
+                    refreshAutocomplete(() => showLoading(false));
+                });
                 loadChartOptimized();
             })
             .catch(err => {
@@ -2510,7 +2769,6 @@
             if(data.length === 0) tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-gray-400 font-bold">Tidak ada data ditemukan</td></tr>`;
         }
 
-        // DIUBAH: Menambahkan kolom Picker dan Approval ke tabel History SC
         function renderHistory(data) {
             renderedHistoryData = data;
             const tbody = document.getElementById('history-body');
@@ -2529,7 +2787,6 @@
                     </td>
                     <td class="px-6 py-3 font-semibold text-gray-600 max-w-[120px] truncate" title="${item.keterangan}">${item.keterangan || '-'}</td>
                     <td class="px-6 py-3 text-gray-500 font-medium">${item.noRo || '-'}</td>
-                    <!-- Kolom Picker dan Approval untuk melacak penanggung jawab -->
                     <td class="px-6 py-3 text-gray-700 font-bold text-[11px] max-w-[100px] truncate" title="${item.picker || '-'}">${item.picker || '-'}</td>
                     <td class="px-6 py-3 text-indigo-700 font-bold text-[11px] max-w-[100px] truncate" title="${item.approval || '-'}">
                         ${item.approval ? `<span class="bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">${item.approval}</span>` : '-'}
@@ -2545,7 +2802,6 @@
             if(data.length === 0) tbody.innerHTML = `<tr><td colspan="14" class="text-center py-10 text-gray-400 font-bold">Tidak ada history transaksi</td></tr>`;
         }
 
-        // DIUBAH: Menambahkan kolom Picker ke dalam list data SC Pending
         function renderPending(data) {
             renderedPendingData = data;
             const tbody = document.getElementById('pending-body');
@@ -2564,7 +2820,6 @@
                     </td>
                     <td class="px-6 py-3 font-semibold text-gray-600 max-w-[120px] truncate" title="${item.keterangan}">${item.keterangan || '-'}</td>
                     <td class="px-6 py-3 text-gray-500 font-medium">${item.noRo || '-'}</td>
-                    <!-- Kolom Picker penanggung jawab input, bersifat read-only -->
                     <td class="px-6 py-3 text-gray-700 font-bold text-[11px] max-w-[100px] truncate" title="${item.picker || '-'}">${item.picker || '-'}</td>
                     <td class="px-6 py-3">
                         <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-orange-100 text-orange-700 animate-pulse"><i class="fa-solid fa-clock mr-1"></i>Pending</span>

@@ -1,61 +1,49 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// MENGHUBUNGKAN KE DATABASE HASIL MIGRASI ANDA
-// Path diarahkan ke folder 'database' dan file 'database_aplikasi.db'
-const dbPath = path.join(__dirname, 'database', 'database_aplikasi.db');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Gagal membuka database SQLite:', err.message);
-  } else {
-    console.log('✅ Terhubung sukses ke SQLite: database/database_aplikasi.db');
-    
-    // AUTO-CREATE TABLES IF MISSING (Mencegah error tabel tidak ditemukan)
-    // Ditambahkan kolom picker TEXT dan approval TEXT pada tabel history & pending untuk mencatat penanggung jawab
-    db.serialize(() => {
-      db.run(`CREATE TABLE IF NOT EXISTS data_users (username TEXT, password TEXT, role TEXT, fullName TEXT)`);
-      db.run(`CREATE TABLE IF NOT EXISTS data_master (lokasi TEXT, model TEXT, pn TEXT, pn1 TEXT, description TEXT, yp NUMERIC, ys NUMERIC, total NUMERIC)`);
-      
-      // Auto-update skema jika tabel sudah ada namun belum memiliki kolom picker/approval
-      db.run(`CREATE TABLE IF NOT EXISTS data_history_sc (lokasi TEXT, model TEXT, pn TEXT, material TEXT, waktu DATETIME, odf TEXT, yp NUMERIC, ys NUMERIC, in_out TEXT, keterangan TEXT, no_ro TEXT, status TEXT, picker TEXT, approval TEXT)`);
-      db.run(`CREATE TABLE IF NOT EXISTS data_sc_pending (lokasi TEXT, model TEXT, material TEXT, pn TEXT, waktu DATETIME, odf TEXT, yp NUMERIC, ys NUMERIC, in_out TEXT, keterangan TEXT, no_ro TEXT, status TEXT, picker TEXT)`);
-      
-      // Query cadangan untuk memastikan kolom baru ditambahkan jika database lama sudah terbentuk
-      db.run(`ALTER TABLE data_history_sc ADD COLUMN picker TEXT`, (err) => {});
-      db.run(`ALTER TABLE data_history_sc ADD COLUMN approval TEXT`, (err) => {});
-      db.run(`ALTER TABLE data_sc_pending ADD COLUMN picker TEXT`, (err) => {});
-    });
-  }
-});
+// MENGHUBUNGKAN KE DATABASE SUPABASE
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error("❌ ERROR: SUPABASE_URL atau SUPABASE_KEY tidak ditemukan di file .env");
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+console.log('✅ Terhubung sukses ke Cloud Database Supabase!');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(__dirname)); // Melayani file statis dari root folder
+app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // --- API LOGIN ---
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  const query = `SELECT * FROM data_users WHERE username = ? AND password = ?`;
-  db.get(query, [username, password], (err, user) => {
-    if (err) return res.status(500).json({ success: false, message: 'Internal Server Error' });
-    if (user) {
-      res.json({ success: true, role: user.role, fullName: user.fullName, username: user.username });
-    } else {
-      res.json({ success: false, message: 'Username atau Password salah!' });
-    }
-  });
+  const { data, error } = await supabase
+    .from('data_users')
+    .select('*')
+    .eq('username', username)
+    .eq('password', password)
+    .maybeSingle();
+
+  if (error || !data) {
+    return res.json({ success: false, message: 'Username atau Password salah!' });
+  }
+  res.json({ success: true, role: data.role, fullName: data.fullName, username: data.username });
 });
 
 // --- API REGISTRASI (SUPERADMIN ONLY) ---
-app.post('/api/register', (req, res) => {
+app.post('/api/register', async (req, res) => {
   const { username, password, role, fullName } = req.body;
   
   if (!username || !password || !role || !fullName) {
@@ -63,21 +51,26 @@ app.post('/api/register', (req, res) => {
   }
 
   // Cek apakah username sudah ada
-  db.get(`SELECT username FROM data_users WHERE username = ?`, [username], (err, row) => {
-    if (err) return res.status(500).json({ success: false, message: 'Internal Server Error' });
-    if (row) return res.status(400).json({ success: false, message: 'Username sudah digunakan, silakan pilih yang lain!' });
+  const { data: existingUser } = await supabase
+    .from('data_users')
+    .select('username')
+    .eq('username', username)
+    .maybeSingle();
 
-    // Insert user baru
-    const query = `INSERT INTO data_users (username, password, role, fullName) VALUES (?, ?, ?, ?)`;
-    db.run(query, [username, password, role, fullName], function(err) {
-      if (err) return res.status(500).json({ success: false, message: 'Gagal membuat akun' });
-      res.json({ success: true, message: 'Akun berhasil didaftarkan!' });
-    });
-  });
+  if (existingUser) {
+    return res.status(400).json({ success: false, message: 'Username sudah digunakan, silakan pilih yang lain!' });
+  }
+
+  const { error } = await supabase
+    .from('data_users')
+    .insert([{ username, password, role, fullName }]);
+
+  if (error) return res.status(500).json({ success: false, message: 'Gagal membuat akun', error });
+  res.json({ success: true, message: 'Akun berhasil didaftarkan!' });
 });
 
-// --- API UPDATE USER (SUPERADMIN ONLY) ---
-app.put('/api/users/:rowNum', (req, res) => {
+// --- API UPDATE USER ---
+app.put('/api/users/:rowNum', async (req, res) => {
   const rowNum = req.params.rowNum;
   const { username, password, role, fullName } = req.body;
 
@@ -85,331 +78,395 @@ app.put('/api/users/:rowNum', (req, res) => {
     return res.status(400).json({ success: false, message: 'Semua kolom wajib diisi!' });
   }
 
-  // Cek apakah username sudah digunakan oleh user lain
-  db.get(`SELECT rowid FROM data_users WHERE username = ? AND rowid != ?`, [username, rowNum], (err, row) => {
-    if (err) return res.status(500).json({ success: false, message: 'Internal Server Error' });
-    if (row) return res.status(400).json({ success: false, message: 'Username sudah digunakan oleh akun lain!' });
+  // Cek username terduplikasi
+  const { data: existingUser } = await supabase
+    .from('data_users')
+    .select('id')
+    .eq('username', username)
+    .neq('id', rowNum)
+    .maybeSingle();
 
-    const query = `UPDATE data_users SET username = ?, password = ?, role = ?, fullName = ? WHERE rowid = ?`;
-    db.run(query, [username, password, role, fullName, rowNum], function(err) {
-      if (err) return res.status(500).json({ success: false, message: 'Gagal memperbarui data pengguna' });
-      res.json({ success: true, message: 'Data pengguna berhasil diperbarui!' });
-    });
-  });
+  if (existingUser) {
+    return res.status(400).json({ success: false, message: 'Username sudah digunakan oleh akun lain!' });
+  }
+
+  const { error } = await supabase
+    .from('data_users')
+    .update({ username, password, role, fullName })
+    .eq('id', rowNum);
+
+  if (error) return res.status(500).json({ success: false, message: 'Gagal memperbarui data pengguna' });
+  res.json({ success: true, message: 'Data pengguna berhasil diperbarui!' });
 });
 
-// --- API DELETE USER (SUPERADMIN ONLY) ---
-app.delete('/api/users/:rowNum', (req, res) => {
-  const rowNum = req.params.rowNum;
-  db.run(`DELETE FROM data_users WHERE rowid = ?`, [rowNum], function(err) {
-    if (err) return res.status(500).json({ success: false, message: 'Gagal menghapus pengguna' });
-    res.json({ success: true, message: 'Akuna pengguna berhasil dihapus!' });
-  });
+// --- API DELETE USER ---
+app.delete('/api/users/:rowNum', async (req, res) => {
+  const { error } = await supabase
+    .from('data_users')
+    .delete()
+    .eq('id', req.params.rowNum);
+
+  if (error) return res.status(500).json({ success: false, message: 'Gagal menghapus pengguna' });
+  res.json({ success: true, message: 'Akun pengguna berhasil dihapus!' });
 });
 
-app.get('/api/users', (req, res) => {
-  db.all(`SELECT rowid AS rowNum, username, password, role, fullName FROM data_users ORDER BY rowid DESC`, [], (err, rows) => {
-    if (err) return res.status(500).json({ success: false, message: 'Gagal mengambil data pengguna' });
-    res.json({ success: true, data: rows });
-  });
+app.get('/api/users', async (req, res) => {
+  const { data, error } = await supabase
+    .from('data_users')
+    .select('id, username, password, role, fullName')
+    .order('id', { ascending: false });
+
+  if (error) return res.status(500).json({ success: false, message: 'Gagal mengambil data pengguna' });
+  
+  const formattedData = data.map(u => ({ ...u, rowNum: u.id }));
+  res.json({ success: true, data: formattedData });
 });
 
 // --- API AUTOCOMPLETE ---
-app.get('/api/autocomplete', (req, res) => {
-  const query = `SELECT lokasi, model, pn, description, yp, ys FROM data_master`;
-  db.all(query, [], (err, rows) => {
-    if (err) return res.status(500).json({ success: false, error: err.message });
-    res.json(rows);
-  });
+app.get('/api/autocomplete', async (req, res) => {
+  let allData = [];
+  let pageNum = 0;
+  const limitVal = 1000;
+
+  while (true) {
+    const { data: chunk, error } = await supabase
+      .from('data_master')
+      .select('lokasi, model, pn, description, yp, ys')
+      .range(pageNum * limitVal, (pageNum + 1) * limitVal - 1);
+
+    if (error) return res.status(500).json({ success: false, error: error.message });
+    if (!chunk || chunk.length === 0) break;
+    
+    allData = allData.concat(chunk);
+    if (chunk.length < limitVal) break;
+    pageNum++;
+  }
+
+  res.json(allData);
 });
 
 // --- API DATABASE MASTER ---
-app.get('/api/database', (req, res) => {
+app.get('/api/database', async (req, res) => {
   const search = req.query.search ? req.query.search.toLowerCase() : "";
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 50;
   const offset = (page - 1) * pageSize;
 
-  let query = `SELECT rowid AS rowNum, lokasi, model, pn, pn1, description, yp, ys, total FROM data_master`;
-  let countQuery = `SELECT COUNT(*) AS totalItems FROM data_master`;
-  let params = [];
+  let query = supabase.from('data_master').select('*', { count: 'exact' });
 
   if (search) {
-    const searchFilter = ` WHERE LOWER(lokasi) LIKE ? OR LOWER(model) LIKE ? OR LOWER(pn) LIKE ? OR LOWER(description) LIKE ?`;
-    query += searchFilter;
-    countQuery += searchFilter;
-    const likeParam = `%${search}%`;
-    params = [likeParam, likeParam, likeParam, likeParam];
+    query = query.or(`lokasi.ilike.%${search}%,model.ilike.%${search}%,pn.ilike.%${search}%,description.ilike.%${search}%`);
   }
 
-  query += ` LIMIT ? OFFSET ?`;
-  const queryParams = [...params, pageSize, offset];
+  const { data, count, error } = await query
+    .range(offset, offset + pageSize - 1)
+    .order('id', { ascending: false });
 
-  db.get(`SELECT COUNT(DISTINCT model) AS uniqueModels FROM data_master`, [], (errUnique, rowUnique) => {
-    const uniqueModels = rowUnique ? rowUnique.uniqueModels : 0;
-    db.get(countQuery, params, (errCount, rowCount) => {
-      if (errCount) return res.status(500).json({ success: false, error: errCount.message });
-      const totalItems = rowCount ? rowCount.totalItems : 0;
-      const totalPages = Math.ceil(totalItems / pageSize);
+  if (error) return res.status(500).json({ success: false, error: error.message });
 
-      db.all(query, queryParams, (errData, rows) => {
-        if (errData) return res.status(500).json({ success: false, error: errData.message });
-        res.json({ success: true, data: rows, totalPages: totalPages, currentPage: page, totalItems: totalItems, uniqueModels: uniqueModels });
-      });
-    });
+  let allModels = [];
+  let pageNum = 0;
+  const limitVal = 1000;
+  while (true) {
+    const { data: chunk, error: chunkErr } = await supabase
+      .from('data_master')
+      .select('model')
+      .range(pageNum * limitVal, (pageNum + 1) * limitVal - 1);
+    
+    if (chunkErr || !chunk || chunk.length === 0) break;
+    allModels = allModels.concat(chunk.map(item => item.model));
+    if (chunk.length < limitVal) break;
+    pageNum++;
+  }
+  const uniqueModels = new Set(allModels.filter(Boolean)).size;
+
+  const formattedData = data.map(d => ({ ...d, rowNum: d.id }));
+  res.json({ 
+    success: true, 
+    data: formattedData, 
+    totalPages: Math.ceil(count / pageSize), 
+    currentPage: page, 
+    totalItems: count, 
+    uniqueModels 
   });
 });
 
-app.post('/api/database', (req, res) => {
-  const { lokasi, model, pn, pn1, description, yp, ys, total } = req.body;
-  const ypVal = parseInt(yp) || 0;
-  const ysVal = parseInt(ys) || 0;
-  const totalVal = ypVal + ysVal;
-
-  const query = `INSERT INTO data_master (lokasi, model, pn, pn1, description, yp, ys, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-  db.run(query, [lokasi, model, pn, pn1, description, ypVal, ysVal, totalVal], function (err) {
-    if (err) return res.status(500).json({ success: false, message: 'Gagal menambah data master' });
-    res.json({ success: true, rowNum: this.lastID });
-  });
-});
-
-app.put('/api/database/:rowNum', (req, res) => {
-  const rowNum = req.params.rowNum;
+app.post('/api/database', async (req, res) => {
   const { lokasi, model, pn, pn1, description, yp, ys } = req.body;
   const ypVal = parseInt(yp) || 0;
   const ysVal = parseInt(ys) || 0;
-  const totalVal = ypVal + ysVal;
 
-  const query = `UPDATE data_master SET lokasi = ?, model = ?, pn = ?, pn1 = ?, description = ?, yp = ?, ys = ?, total = ? WHERE rowid = ?`;
-  db.run(query, [lokasi, model, pn, pn1, description, ypVal, ysVal, totalVal, rowNum], function(err) {
-    if (err) return res.status(500).json({ success: false, message: 'Gagal memperbarui data master' });
-    res.json({ success: true });
-  });
+  const { data, error } = await supabase
+    .from('data_master')
+    .insert([{ lokasi, model, pn, pn1, description, yp: ypVal, ys: ysVal, total: ypVal + ysVal }])
+    .select('id')
+    .single();
+
+  if (error) return res.status(500).json({ success: false, message: 'Gagal menambah data master', error });
+  res.json({ success: true, rowNum: data.id });
 });
 
-app.delete('/api/database/:rowNum', (req, res) => {
-  db.run(`DELETE FROM data_master WHERE rowid = ?`, [req.params.rowNum], function(err) {
-    if (err) return res.status(500).json({ success: false, message: 'Gagal menghapus data master' });
-    res.json({ success: true });
-  });
+app.put('/api/database/:rowNum', async (req, res) => {
+  const { lokasi, model, pn, pn1, description, yp, ys } = req.body;
+  const ypVal = parseInt(yp) || 0;
+  const ysVal = parseInt(ys) || 0;
+
+  const { error } = await supabase
+    .from('data_master')
+    .update({ lokasi, model, pn, pn1, description, yp: ypVal, ys: ysVal, total: ypVal + ysVal })
+    .eq('id', req.params.rowNum);
+
+  if (error) return res.status(500).json({ success: false, message: 'Gagal memperbarui data master', error });
+  res.json({ success: true });
+});
+
+app.delete('/api/database/:rowNum', async (req, res) => {
+  const { error } = await supabase
+    .from('data_master')
+    .delete()
+    .eq('id', req.params.rowNum);
+
+  if (error) return res.status(500).json({ success: false, message: 'Gagal menghapus data master' });
+  res.json({ success: true });
 });
 
 // --- API HISTORY SC ---
-app.get('/api/history', (req, res) => {
+app.get('/api/history', async (req, res) => {
   const search = req.query.search ? req.query.search.toLowerCase() : "";
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 50;
   const offset = (page - 1) * pageSize;
 
-  let query = `SELECT rowid AS rowNum, lokasi, model, pn, material, waktu, odf, yp, ys, in_out AS type, keterangan, no_ro AS noRo, picker, approval FROM data_history_sc`;
-  let countQuery = `SELECT COUNT(*) AS totalItems FROM data_history_sc`;
-  let params = [];
+  let query = supabase.from('data_history_sc').select('*', { count: 'exact' });
 
   if (search) {
-    const searchFilter = ` WHERE LOWER(pn) LIKE ? OR LOWER(model) LIKE ? OR LOWER(lokasi) LIKE ? OR LOWER(keterangan) LIKE ? OR LOWER(no_ro) LIKE ? OR LOWER(picker) LIKE ? OR LOWER(approval) LIKE ?`;
-    query += searchFilter;
-    countQuery += searchFilter;
-    const likeParam = `%${search}%`;
-    params = [likeParam, likeParam, likeParam, likeParam, likeParam, likeParam, likeParam];
+    query = query.or(`pn.ilike.%${search}%,model.ilike.%${search}%,lokasi.ilike.%${search}%,keterangan.ilike.%${search}%,no_ro.ilike.%${search}%,picker.ilike.%${search}%,approval.ilike.%${search}%`);
   }
 
-  query += ` ORDER BY rowid DESC LIMIT ? OFFSET ?`;
-  const queryParams = [...params, pageSize, offset];
+  const { data, count, error } = await query
+    .range(offset, offset + pageSize - 1)
+    .order('id', { ascending: false });
 
-  db.get(`SELECT SUM(yp + ys) AS totalIn FROM data_history_sc WHERE in_out = 'IN'`, [], (errIn, rowIn) => {
-    const totalIn = rowIn ? (rowIn.totalIn || 0) : 0;
-    db.get(`SELECT SUM(yp + ys) AS totalOut FROM data_history_sc WHERE in_out = 'OUT'`, [], (errOut, rowOut) => {
-      const totalOut = rowOut ? (rowOut.totalOut || 0) : 0;
-      db.get(countQuery, params, (errCount, rowCount) => {
-        if (errCount) return res.status(500).json({ success: false, error: errCount.message });
-        const totalItems = rowCount ? rowCount.totalItems : 0;
-        
-        db.all(query, queryParams, (errData, rows) => {
-          if (errData) return res.status(500).json({ success: false, error: errData.message });
-          res.json({ success: true, data: rows, totalPages: Math.ceil(totalItems / pageSize), currentPage: page, totalItems: totalItems, totalIn: totalIn, totalOut: totalOut });
-        });
-      });
-    });
+  if (error) return res.status(500).json({ success: false, error: error.message });
+
+  const { count: totalIn } = await supabase
+    .from('data_history_sc')
+    .select('*', { count: 'exact', head: true })
+    .eq('in_out', 'IN');
+
+  const { count: totalOut } = await supabase
+    .from('data_history_sc')
+    .select('*', { count: 'exact', head: true })
+    .eq('in_out', 'OUT');
+
+  const formattedData = data.map(d => ({ 
+    ...d, 
+    rowNum: d.id, 
+    type: d.in_out, 
+    noRo: d.no_ro,
+    waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-'
+  }));
+
+  res.json({ 
+    success: true, 
+    data: formattedData, 
+    totalPages: Math.ceil(count / pageSize), 
+    currentPage: page, 
+    totalItems: count, 
+    totalIn: totalIn || 0, 
+    totalOut: totalOut || 0 
   });
 });
 
-app.put('/api/history/:rowNum', (req, res) => {
+app.put('/api/history/:rowNum', async (req, res) => {
   const { lokasi, model, pn, material, waktu, odf, yp, ys, type, keterangan, noRo, picker, approval } = req.body;
-  const query = `UPDATE data_history_sc SET lokasi = ?, model = ?, pn = ?, material = ?, waktu = ?, odf = ?, yp = ?, ys = ?, in_out = ?, keterangan = ?, no_ro = ?, picker = ?, approval = ? WHERE rowid = ?`;
-  db.run(query, [lokasi, model, pn, material, waktu, odf, yp, ys, type, keterangan, noRo, picker, approval, req.params.rowNum], function(err) {
-    if (err) return res.status(500).json({ success: false, message: 'Gagal memperbarui log history' });
-    res.json({ success: true });
-  });
+  
+  const { error } = await supabase
+    .from('data_history_sc')
+    .update({ 
+      lokasi, model, pn, material, waktu, odf, 
+      yp: Number(yp)||0, ys: Number(ys)||0, in_out: type, keterangan, no_ro: noRo, picker, approval 
+    })
+    .eq('id', req.params.rowNum);
+
+  if (error) return res.status(500).json({ success: false, message: 'Gagal memperbarui log history', error });
+  res.json({ success: true });
 });
 
-app.delete('/api/history/:rowNum', (req, res) => {
+app.delete('/api/history/:rowNum', async (req, res) => {
   const rowNum = req.params.rowNum;
 
-  db.get(`SELECT * FROM data_history_sc WHERE rowid = ?`, [rowNum], (err, item) => {
-    if (err || !item) return res.status(504).json({ success: false, message: 'Data history tidak ditemukan' });
+  const { data: item, error: errItem } = await supabase
+    .from('data_history_sc')
+    .select('*')
+    .eq('id', rowNum)
+    .single();
 
-    const multiplier = (item.in_out === 'IN') ? -1 : 1;
-    const ypChange = (item.yp || 0) * multiplier;
-    const ysChange = (item.ys || 0) * multiplier;
+  if (errItem || !item) return res.status(504).json({ success: false, message: 'Data history tidak ditemukan' });
 
-    db.get(`SELECT rowid AS rowId, yp, ys FROM data_master WHERE pn = ? AND lokasi = ?`, [item.pn, item.lokasi], (errM, mRow) => {
-      if (!mRow) {
-          db.run(`DELETE FROM data_history_sc WHERE rowid = ?`, [rowNum], (errD) => {
-            res.json({ success: true, message: 'History dihapus (master tidak ditemukan)' });
-          });
-          return;
-      }
+  const multiplier = (item.in_out === 'IN') ? -1 : 1;
+  const ypChange = (Number(item.yp) || 0) * multiplier;
+  const ysChange = (Number(item.ys) || 0) * multiplier;
 
-      const newYP = Math.max(0, mRow.yp + ypChange);
-      const newYS = Math.max(0, mRow.ys + ysChange);
-      const newTotal = newYP + newYS;
+  const { data: mRow } = await supabase
+    .from('data_master')
+    .select('id, yp, ys')
+    .eq('pn', item.pn)
+    .eq('lokasi', item.lokasi)
+    .maybeSingle();
 
-      db.run(`UPDATE data_master SET yp = ?, ys = ?, total = ? WHERE rowid = ?`, [newYP, newYS, newTotal, mRow.rowId], (errUp) => {
-        if (errUp) return res.status(500).json({ success: false, message: 'Gagal update stok master' });
+  if (mRow) {
+    const newYP = Math.max(0, Number(mRow.yp) + ypChange);
+    const newYS = Math.max(0, Number(mRow.ys) + ysChange);
+    await supabase
+      .from('data_master')
+      .update({ yp: newYP, ys: newYS, total: newYP + newYS })
+      .eq('id', mRow.id);
+  }
 
-        db.run(`DELETE FROM data_history_sc WHERE rowid = ?`, [rowNum], (errD) => {
-          if (errD) return res.status(500).json({ success: false, message: 'Gagal menghapus history' });
-          res.json({ success: true });
-        });
-      });
-    });
-  });
+  await supabase.from('data_history_sc').delete().eq('id', rowNum);
+  res.json({ success: true });
 });
 
 // --- API PENDING SC ---
-app.get('/api/pending', (req, res) => {
+app.get('/api/pending', async (req, res) => {
   const search = req.query.search ? req.query.search.toLowerCase() : "";
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 50;
-  
-  let query = `SELECT rowid AS rowNum, lokasi, model, pn, material, waktu, odf, yp, ys, in_out AS type, keterangan, no_ro AS noRo, status, picker FROM data_sc_pending`;
-  let countQuery = `SELECT COUNT(*) AS totalItems FROM data_sc_pending`;
-  let params = [];
+  const offset = (page - 1) * pageSize;
+
+  let query = supabase.from('data_sc_pending').select('*', { count: 'exact' });
 
   if (search) {
-    const searchFilter = ` WHERE LOWER(pn) LIKE ? OR LOWER(model) LIKE ? OR LOWER(lokasi) LIKE ? OR LOWER(keterangan) LIKE ? OR LOWER(picker) LIKE ?`;
-    query += searchFilter;
-    countQuery += searchFilter;
-    const likeParam = `%${search}%`;
-    params = [likeParam, likeParam, likeParam, likeParam, likeParam];
+    query = query.or(`pn.ilike.%${search}%,model.ilike.%${search}%,lokasi.ilike.%${search}%,keterangan.ilike.%${search}%,picker.ilike.%${search}%`);
   }
 
-  query += ` ORDER BY rowid DESC LIMIT ? OFFSET ?`;
+  const { data, count, error } = await query
+    .range(offset, offset + pageSize - 1)
+    .order('id', { ascending: false });
 
-  db.get(countQuery, params, (errCount, rowCount) => {
-    if (errCount) return res.status(500).json({ success: false, error: errCount.message });
-    const totalItems = rowCount ? rowCount.totalItems : 0;
-    
-    db.all(query, [...params, pageSize, (page - 1) * pageSize], (errData, rows) => {
-      if (errData) return res.status(500).json({ success: false, error: errData.message });
-      res.json({ success: true, data: rows, totalPages: Math.ceil(totalItems / pageSize), currentPage: page, totalItems: totalItems });
-    });
-  });
+  if (error) return res.status(500).json({ success: false, error: error.message });
+
+  const formattedData = data.map(d => ({ 
+    ...d, 
+    rowNum: d.id, 
+    type: d.in_out, 
+    noRo: d.no_ro,
+    waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-'
+  }));
+
+  res.json({ success: true, data: formattedData, totalPages: Math.ceil(count / pageSize), currentPage: page, totalItems: count });
 });
 
-app.delete('/api/pending/:rowNum', (req, res) => {
-  db.run(`DELETE FROM data_sc_pending WHERE rowid = ?`, [req.params.rowNum], function(err) {
-    if (err) return res.status(500).json({ success: false, message: 'Gagal membatalkan transaksi pending' });
-    res.json({ success: true });
-  });
+app.delete('/api/pending/:rowNum', async (req, res) => {
+  const { error } = await supabase
+    .from('data_sc_pending')
+    .delete()
+    .eq('id', req.params.rowNum);
+
+  if (error) return res.status(500).json({ success: false, message: 'Gagal membatalkan transaksi pending' });
+  res.json({ success: true });
 });
 
-// DIUBAH: Mendukung penyimpanan user approval yang dikirim dari UI frontend
-app.post('/api/pending/approve/:rowNum', (req, res) => {
+app.post('/api/pending/approve/:rowNum', async (req, res) => {
   const rowNum = req.params.rowNum;
-  const { approvedBy } = req.body; // Nama peng-approve dari client
+  const { approvedBy } = req.body; 
 
-  db.get(`SELECT * FROM data_sc_pending WHERE rowid = ?`, [rowNum], (errPending, item) => {
-    if (errPending || !item) return res.status(504).json({ success: false, message: 'Data pending tidak ditemukan' });
+  const { data: item, error: errPending } = await supabase
+    .from('data_sc_pending')
+    .select('*')
+    .eq('id', rowNum)
+    .single();
 
-    db.get(`SELECT rowid AS rowId, yp, ys, total FROM data_master WHERE TRIM(pn) = TRIM(?) AND TRIM(lokasi) = TRIM(?)`, [item.pn, item.lokasi], (errM, mRow) => {
-      if (errM) return res.status(500).json({ success: false, message: 'Kesalahan database saat mencari master' });
-      if (!mRow) return res.status(500).json({ success: false, message: `Item master untuk PN: ${item.pn} di Lokasi: ${item.lokasi} tidak ditemukan (pastikan penulisan sama persis)` });
+  if (errPending || !item) return res.status(504).json({ success: false, message: 'Data pending tidak ditemukan' });
 
-      const newYP = Math.max(0, mRow.yp - (item.yp || 0));
-      const newYS = Math.max(0, mRow.ys - (item.ys || 0));
-      const newTotal = newYP + newYS;
+  const { data: mRow, error: errM } = await supabase
+    .from('data_master')
+    .select('id, yp, ys')
+    .eq('pn', item.pn)
+    .eq('lokasi', item.lokasi)
+    .maybeSingle();
 
-      db.run(`UPDATE data_master SET yp = ?, ys = ?, total = ? WHERE rowid = ?`, [newYP, newYS, newTotal, mRow.rowId], (errUp) => {
-        if (errUp) return res.status(500).json({ success: false, message: 'Gagal memperbarui stok di master' });
+  if (errM || !mRow) {
+    return res.status(500).json({ success: false, message: `Item master untuk PN: ${item.pn} di Lokasi: ${item.lokasi} tidak ditemukan` });
+  }
 
-        // Ditambahkan penyimpanan picker dan approval ke tabel history SC
-        const insertHistory = `INSERT INTO data_history_sc (lokasi, model, pn, material, waktu, odf, yp, ys, in_out, keterangan, no_ro, status, picker, approval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-        db.run(insertHistory, [item.lokasi, item.model, item.pn, item.material, item.waktu, item.odf, item.yp, item.ys, item.in_out, item.keterangan, item.no_ro, 'APPROVED', item.picker || 'System', approvedBy || 'Admin'], (errHist) => {
-          if (errHist) return res.status(500).json({ success: false, message: 'Gagal memindahkan ke log history' });
+  const newYP = Math.max(0, Number(mRow.yp) - (Number(item.yp) || 0));
+  const newYS = Math.max(0, Number(mRow.ys) - (Number(item.ys) || 0));
+  const newTotal = newYP + newYS;
 
-          db.run(`DELETE FROM data_sc_pending WHERE rowid = ?`, [rowNum], (errDel) => {
-            if (errDel) return res.status(500).json({ success: false, message: 'Gagal menghapus list pending' });
-            res.json({ success: true });
-          });
-        });
-      });
-    });
-  });
+  const { error: errUp } = await supabase
+    .from('data_master')
+    .update({ yp: newYP, ys: newYS, total: newTotal })
+    .eq('id', mRow.id);
+
+  if (errUp) return res.status(500).json({ success: false, message: 'Gagal memperbarui stok di master' });
+
+  const { error: errHist } = await supabase
+    .from('data_history_sc')
+    .insert([{
+      lokasi: item.lokasi, model: item.model, pn: item.pn, material: item.material, waktu: item.waktu, 
+      odf: item.odf, yp: item.yp, ys: item.ys, in_out: item.in_out, keterangan: item.keterangan, 
+      no_ro: item.no_ro, status: 'APPROVED', picker: item.picker || 'System', approval: approvedBy || 'Admin'
+    }]);
+
+  if (errHist) return res.status(500).json({ success: false, message: 'Gagal memindahkan ke log history' });
+
+  await supabase.from('data_sc_pending').delete().eq('id', rowNum);
+  res.json({ success: true });
 });
 
 // --- API TRANSAKSI BATCH ---
 app.post('/api/transactions/batch', async (req, res) => {
-  const { items, picker } = req.body; // Mengambil items dan data picker (penginput) dari body request
-  const transactionItems = items || req.body; // Fallback jika client mengirim array langsung
+  const { items, picker } = req.body; 
+  const transactionItems = items || req.body; 
   const defaultPicker = picker || 'System';
 
   if (!transactionItems || transactionItems.length === 0) return res.status(400).json({ success: false, message: 'Item transaksi kosong' });
 
-  const formatWaktu = () => {
-    const d = new Date();
-    const tgl = String(d.getDate()).padStart(2, '0');
-    const bln = String(d.getMonth() + 1).padStart(2, '0');
-    return `${tgl}/${bln}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
-  };
-
-  const waktuSekarang = formatWaktu();
+  const waktuSekarang = new Date().toISOString();
   let errors = [];
 
   for (const item of transactionItems) {
-    await new Promise((resolve) => {
-      const ypVal = parseInt(item.yp) || 0;
-      const ysVal = parseInt(item.ys) || 0;
-      const itemPicker = item.picker || defaultPicker; // Menangani picker per item atau global
+    const ypVal = parseInt(item.yp) || 0;
+    const ysVal = parseInt(item.ys) || 0;
+    const itemPicker = item.picker || defaultPicker; 
 
-      if (item.type === 'IN') {
-        db.get(`SELECT rowid AS rowId, yp, ys FROM data_master WHERE pn = ? AND lokasi = ?`, [item.pn, item.lokasi], (err, mRow) => {
-          if (err) { errors.push(`DB Error: ${err.message}`); return resolve(); }
-          
-          if (mRow) {
-            db.run(`UPDATE data_master SET yp = ?, ys = ?, total = ? WHERE rowid = ?`, [mRow.yp + ypVal, mRow.ys + ysVal, mRow.yp + ypVal + mRow.ys + ysVal, mRow.rowId], (errUp) => {
-              if (errUp) { errors.push(`Gagal update master: ${errUp.message}`); return resolve(); }
-              
-              // Masuk ke history langsung ter-APPROVED, picker terekam, approval diisi "AUTO" karena barang IN tidak butuh approval manual
-              db.run(`INSERT INTO data_history_sc (lokasi, model, pn, material, waktu, odf, yp, ys, in_out, keterangan, no_ro, status, picker, approval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [item.lokasi, item.model, item.pn, item.material, waktuSekarang, item.odf, ypVal, ysVal, 'IN', item.keterangan, item.noRo, 'APPROVED', itemPicker, 'AUTO'], (errHist) => {
-                  if (errHist) errors.push(`Gagal insert history IN: ${errHist.message}`);
-                  resolve();
-                });
-            });
-          } else {
-            db.run(`INSERT INTO data_master (lokasi, model, pn, description, yp, ys, total) VALUES (?, ?, ?, ?, ?, ?, ?)`, [item.lokasi, item.model, item.pn, item.material, ypVal, ysVal, ypVal + ysVal], (errIns) => {
-              if (errIns) { errors.push(`Gagal insert master baru: ${errIns.message}`); return resolve(); }
-              
-              db.run(`INSERT INTO data_history_sc (lokasi, model, pn, material, waktu, odf, yp, ys, in_out, keterangan, no_ro, status, picker, approval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [item.lokasi, item.model, item.pn, item.material, waktuSekarang, item.odf, ypVal, ysVal, 'IN', item.keterangan, item.noRo, 'APPROVED', itemPicker, 'AUTO'], (errHist) => {
-                  if (errHist) errors.push(`Gagal insert history IN (baru): ${errHist.message}`);
-                  resolve();
-                });
-            });
-          }
-        });
+    if (item.type === 'IN') {
+      const { data: mRow } = await supabase
+        .from('data_master')
+        .select('id, yp, ys')
+        .eq('pn', item.pn)
+        .eq('lokasi', item.lokasi)
+        .maybeSingle();
+
+      if (mRow) {
+        const newYP = Number(mRow.yp) + ypVal;
+        const newYS = Number(mRow.ys) + ysVal;
+        await supabase
+          .from('data_master')
+          .update({ yp: newYP, ys: newYS, total: newYP + newYS })
+          .eq('id', mRow.id);
+
+        await supabase
+          .from('data_history_sc')
+          .insert([{
+            lokasi: item.lokasi, model: item.model, pn: item.pn, material: item.material, waktu: waktuSekarang, 
+            odf: item.odf, yp: ypVal, ys: ysVal, in_out: 'IN', keterangan: item.keterangan, 
+            no_ro: item.noRo, status: 'APPROVED', picker: itemPicker, approval: 'AUTO'
+          }]);
       } else {
-        // Masuk ke list Pending dengan menyertakan picker dari akun penginput
-        db.run(`INSERT INTO data_sc_pending (lokasi, model, pn, material, waktu, odf, yp, ys, in_out, keterangan, no_ro, status, picker) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [item.lokasi, item.model, item.pn, item.material, waktuSekarang, item.odf, ypVal, ysVal, 'OUT', item.keterangan, item.noRo, 'PROSES', itemPicker], function(errPend) {
-             if (errPend) {
-                 errors.push(`Gagal memproses barang OUT (PN: ${item.pn}): ${errPend.message}`);
-             }
-             resolve();
-          });
+        errors.push(`Gagal IN: PN '${item.pn}' di Lokasi '${item.lokasi}' tidak ditemukan di Database Master. Tambahkan dari menu Database terlebih dahulu`);
       }
-    });
+    } else {
+      await supabase
+        .from('data_sc_pending')
+        .insert([{
+          lokasi: item.lokasi, model: item.model, pn: item.pn, material: item.material, waktu: waktuSekarang, 
+          odf: item.odf, yp: ypVal, ys: ysVal, in_out: 'OUT', keterangan: item.keterangan, 
+          no_ro: item.noRo, status: 'PROSES', picker: itemPicker
+        }]);
+    }
   }
   
   if (errors.length > 0) res.status(500).json({ success: false, message: errors.join('. ') });
@@ -417,70 +474,106 @@ app.post('/api/transactions/batch', async (req, res) => {
 });
 
 // --- API CHART & DRILLDOWN ---
-app.get('/api/chart-summary', (req, res) => {
-  db.all(`SELECT keterangan, COUNT(*) AS count FROM data_history_sc GROUP BY keterangan`, [], (err, rows) => {
-    if (err) return res.status(500).json({ success: false, error: err.message });
-    const summary = {};
-    rows.forEach(r => { if (r.keterangan) summary[r.keterangan] = r.count; });
-    res.json(summary);
+app.get('/api/chart-summary', async (req, res) => {
+  const { data, error } = await supabase
+    .from('data_history_sc')
+    .select('keterangan');
+
+  if (error) return res.status(500).json({ success: false, error: error.message });
+  
+  const summary = {};
+  data.forEach(r => { 
+    if (r.keterangan) {
+      summary[r.keterangan] = (summary[r.keterangan] || 0) + 1;
+    }
   });
+  res.json(summary);
 });
 
-app.get('/api/drilldown', (req, res) => {
+app.get('/api/drilldown', async (req, res) => {
   const keterangan = req.query.keterangan;
-  db.all(`SELECT lokasi, model, pn, material, waktu, yp, ys FROM data_history_sc WHERE keterangan = ? ORDER BY rowid DESC LIMIT 30`, [keterangan], (errLogs, logsRows) => {
-    db.all(`SELECT material, SUM(yp) AS totalYP, SUM(ys) AS totalYS FROM data_history_sc WHERE keterangan = ? GROUP BY material`, [keterangan], (errGroups, groupsRows) => {
-      const materialGroups = {};
-      groupsRows.forEach(g => { materialGroups[g.material || '-'] = { yp: g.totalYP || 0, ys: g.totalYS || 0 }; });
-      res.json({ recentLogs: logsRows, materialGroups: materialGroups });
-    });
+  
+  const { data: logsRows } = await supabase
+    .from('data_history_sc')
+    .select('lokasi, model, pn, material, waktu, yp, ys')
+    .eq('keterangan', keterangan)
+    .order('id', { ascending: false })
+    .limit(30);
+
+  const { data: allGroupData } = await supabase
+    .from('data_history_sc')
+    .select('material, yp, ys')
+    .eq('keterangan', keterangan);
+
+  const materialGroups = {};
+  (allGroupData || []).forEach(g => {
+    const mat = g.material || '-';
+    if (!materialGroups[mat]) materialGroups[mat] = { yp: 0, ys: 0 };
+    materialGroups[mat].yp += (Number(g.yp) || 0);
+    materialGroups[mat].ys += (Number(g.ys) || 0);
   });
+
+  const formattedLogs = (logsRows || []).map(d => ({ 
+    ...d, 
+    waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : '-' 
+  }));
+
+  res.json({ recentLogs: formattedLogs, materialGroups });
 });
 
-app.get('/api/item-history', (req, res) => {
-  db.all(`SELECT waktu, in_out AS type, yp, ys, keterangan, no_ro AS noRo FROM data_history_sc WHERE pn = ? AND lokasi = ? ORDER BY rowid DESC LIMIT 20`, [req.query.pn, req.query.lokasi], (err, rows) => {
-    if (err) return res.status(500).json({ success: false, error: err.message });
-    res.json(rows);
-  });
+app.get('/api/item-history', async (req, res) => {
+  const { data, error } = await supabase
+    .from('data_history_sc')
+    .select('waktu, in_out, yp, ys, keterangan, no_ro')
+    .eq('pn', req.query.pn)
+    .eq('lokasi', req.query.lokasi)
+    .order('id', { ascending: false })
+    .limit(20);
+
+  if (error) return res.status(500).json({ success: false, error: error.message });
+
+  const formatted = (data || []).map(d => ({
+    waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : '-',
+    type: d.in_out,
+    yp: d.yp,
+    ys: d.ys,
+    keterangan: d.keterangan,
+    noRo: d.no_ro
+  }));
+
+  res.json(formatted);
 });
 
 // --- API BACKUP ---
-app.get('/api/backup', (req, res) => {
+app.get('/api/backup', async (req, res) => {
   const search = req.query.search ? req.query.search.toLowerCase() : "";
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 50;
-  
-  let query = `SELECT rowid AS rowNum, lokasi, model, pn, material, waktu, odf, yp, ys, in_out AS type, keterangan, no_ro AS noRo FROM data_backup_history_25_26`;
-  let countQuery = `SELECT COUNT(*) AS totalItems FROM data_backup_history_25_26`;
-  let params = [];
+  const offset = (page - 1) * pageSize;
+
+  let query = supabase.from('data_backup_history_25_26').select('*', { count: 'exact' });
 
   if (search) {
-    const searchFilter = ` WHERE LOWER(pn) LIKE ? OR LOWER(model) LIKE ? OR LOWER(no_ro) LIKE ?`;
-    query += searchFilter;
-    countQuery += searchFilter;
-    const likeParam = `%${search}%`;
-    params = [likeParam, likeParam, likeParam];
+    query = query.or(`pn.ilike.%${search}%,model.ilike.%${search}%,no_ro.ilike.%${search}%`);
   }
 
-  query += ` ORDER BY rowid DESC LIMIT ? OFFSET ?`;
+  const { data, count, error } = await query
+    .range(offset, offset + pageSize - 1)
+    .order('id', { ascending: false });
+  
+  if (error) return res.json({ success: true, data: [], totalPages: 0, currentPage: 1, totalItems: 0 });
 
-  db.get(countQuery, params, (errCount, rowCount) => {
-    // Handling error jika table tidak ada untuk mencegah server crash
-    if (errCount) return res.json({ success: true, data: [], totalPages: 0, currentPage: 1, totalItems: 0 }); 
+  const formattedData = (data || []).map(d => ({ 
+    ...d, 
+    rowNum: d.id, 
+    type: d.in_out, 
+    noRo: d.no_ro,
+    waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-'
+  }));
 
-    db.all(query, [...params, pageSize, (page - 1) * pageSize], (errData, rows) => {
-      res.json({ success: true, data: rows || [], totalPages: Math.ceil((rowCount?.totalItems || 0) / pageSize), currentPage: page, totalItems: rowCount?.totalItems || 0 });
-    });
-  });
-});
-
-app.get('/api/backup/export', (req, res) => {
-  db.all(`SELECT lokasi, model, pn, material, waktu, odf, yp, ys, in_out AS type, keterangan, no_ro AS noRo FROM data_history_sc ORDER BY rowid DESC LIMIT 5000`, [], (err, rows) => {
-    if (err) return res.status(500).json({ success: false, error: err.message });
-    res.json(rows);
-  });
+  res.json({ success: true, data: formattedData, totalPages: Math.ceil(count / pageSize), currentPage: page, totalItems: count });
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server aktif menggunakan SQLite di port http://localhost:${PORT}`);
+  console.log(`🚀 Server aktif menggunakan Supabase di port http://localhost:${PORT}`);
 });
