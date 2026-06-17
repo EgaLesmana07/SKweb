@@ -1,18 +1,22 @@
 {
-  "name": "node-express-api",
-  "description": "Simple api sample in Node",
+  "name": "node-express-web",
   "version": "1.0.0",
-  "private": true,
-  "main": "index.js",
-  "type": "module",
+  "description": "",
+  "main": "server.js",
   "scripts": {
-    "dev": "nodemon index.js",
-    "start": "node index.js"
+    "dev": "nodemon server.js",
+    "start": "node server.js"
   },
-  "author": "Google LLC",
-  "license": "Apache-2.0",
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "express": "^4.21.2"
+    "body-parser": "^2.2.2",
+    "cors": "^2.8.6",
+    "csv-parser": "^3.2.1",
+    "csv-writer": "^1.6.0",
+    "ejs": "^3.1.9",
+    "express": "^4.22.2",
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
