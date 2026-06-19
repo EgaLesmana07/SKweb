@@ -266,11 +266,17 @@
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5 pb-4 border-b border-gray-100">
                         <div>
                             <h3 class="text-sm sm:text-base font-black text-gray-800 uppercase">Stock Card Barang</h3>
-                            <p class="text-xs text-gray-400 mt-1">Formulir list dinamis untuk input batch.</p>
+                            <p class="text-xs text-gray-400 mt-1">Input manual atau <button onclick="downloadCSVTemplate()" class="text-blue-500 hover:text-blue-700 font-bold underline transition-colors">Download Template CSV</button> untuk Import Barang.</p>
                         </div>
-                        <button id="btn-add-row-action" onclick="addTransactionRow()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm shrink-0">
-                            <i class="fa-solid fa-plus text-xs"></i> Tambah Baris Transaksi
-                        </button>
+                        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-3 sm:mt-0">
+                            <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="processCSVUpload(event)">
+                            <button onclick="document.getElementById('csv-upload').click()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm shrink-0">
+                                <i class="fa-solid fa-file-import text-xs"></i> Import CSV
+                            </button>
+                            <button id="btn-add-row-action" onclick="addTransactionRow()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm shrink-0">
+                                <i class="fa-solid fa-plus text-xs"></i> Tambah Baris
+                            </button>
+                        </div>
                     </div>
                     <div class="mb-5">
                         <div class="flex justify-between items-center mb-4">
@@ -516,7 +522,7 @@
                     <i class="fa-solid fa-arrow-left text-sm"></i>
                 </button>
                 <h3 id="lokasi-modal-title" class="text-base sm:text-xl font-black text-gray-800 flex items-center gap-2 truncate">
-                    <i class="fa-solid fa-layer-group text-blue-500"></i> Rekapitulasi Lokasi & Model
+                    <i class="fa-solid fa-layer-group text-blue-500"></i> Lokasi & Model
                 </h3>
             </div>
             
@@ -1936,6 +1942,131 @@
             }
 
             return false;
+        }
+
+        // --- Fitur Import & Export CSV Transaksi ---
+        function downloadCSVTemplate() {
+            const csvContent = "data:text/csv;charset=utf-8,PN,Lokasi,Tipe(IN/OUT),Qty_YP,Qty_YS,No_RO,ODF,Keterangan\r\nCONTOH-PN-123,Lokasi A,IN,50,0,RO-123,ODF-123,Kedatangan Barang\r\n";
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Template_Import_Transaksi.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function processCSVUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const rows = text.split('\n');
+                
+                if(rows.length < 2) {
+                    showToast("Error", "File CSV kosong atau format tidak valid.", "error");
+                    event.target.value = '';
+                    return;
+                }
+
+                showLoading(true, "Membaca & Memvalidasi CSV...");
+
+                // Gunakan timeout agar loading UI sempat muncul
+                setTimeout(() => {
+                    let importedCount = 0;
+                    for(let i = 1; i < rows.length; i++) {
+                        const rowText = rows[i].trim();
+                        if(!rowText) continue;
+                        
+                        const cols = rowText.split(',');
+                        if(cols.length < 8) continue; 
+                        
+                        const pn = cols[0].trim();
+                        const lokasi = cols[1].trim();
+                        const tipe = cols[2].trim().toUpperCase() === 'OUT' ? 'OUT' : 'IN';
+                        const yp = parseInt(cols[3]) || 0;
+                        const ys = parseInt(cols[4]) || 0;
+                        const ro = cols[5] ? cols[5].trim() : '';
+                        const odf = cols[6] ? cols[6].trim() : '';
+                        const ket = cols[7] ? cols[7].trim() : 'Kedatangan Barang';
+
+                        // Tambahkan baris kosong
+                        const rowId = transRowCounter; 
+                        addTransactionRow(); 
+                        
+                        // Isi data utama
+                        const pnInput = document.getElementById(`pn-${rowId}`);
+                        if(pnInput) {
+                            pnInput.value = pn;
+                            handleRowScanPN(rowId, pn); // Otomatis mengisi model & material
+                        }
+                        
+                        // Beri delay sedikit agar `handleRowScanPN` selesai memproses list lokasi
+                        setTimeout(() => {
+                            const lokasiSelect = document.getElementById(`lokasi-${rowId}`);
+                            if(lokasiSelect) {
+                                let optionExists = Array.from(lokasiSelect.options).some(opt => opt.value === lokasi);
+                                if(!optionExists && lokasi) {
+                                    lokasiSelect.innerHTML += `<option value="${lokasi}">${lokasi}</option>`;
+                                }
+                                lokasiSelect.value = lokasi;
+                            }
+
+                            const typeSelect = document.getElementById(`type-${rowId}`);
+                            if(typeSelect) {
+                                typeSelect.value = tipe;
+                                updateRowTypeColor(rowId);
+                            }
+                            
+                            const ypInput = document.getElementById(`yp-${rowId}`);
+                            if(ypInput) ypInput.value = yp;
+
+                            const ysInput = document.getElementById(`ys-${rowId}`);
+                            if(ysInput) ysInput.value = ys;
+
+                            const roInput = document.getElementById(`ro-${rowId}`);
+                            if(roInput) roInput.value = ro;
+
+                            const odfInput = document.getElementById(`odf-${rowId}`);
+                            if(odfInput) odfInput.value = odf;
+
+                            const ketSelect = document.getElementById(`ket-${rowId}`);
+                            if(ketSelect) {
+                                let ketExists = Array.from(ketSelect.options).some(opt => opt.value === ket);
+                                if(!ketExists && ket) {
+                                    ketSelect.innerHTML += `<option value="${ket}">${ket}</option>`;
+                                }
+                                ketSelect.value = ket;
+                            }
+
+                            updateRowStockInfo(rowId);
+                            validateRowStock(rowId);
+                        }, 80);
+
+                        importedCount++;
+                    }
+                    
+                    event.target.value = ''; 
+                    showLoading(false);
+                    if(importedCount > 0) {
+                        showToast("Import Selesai", `${importedCount} baris berhasil dimuat. Silakan periksa & klik Simpan Transaksi.`, "success");
+                        // Hapus baris kosong default di atas jika ada
+                        if(transRows.length > importedCount) {
+                            const firstRowId = transRows[0];
+                            const firstPn = document.getElementById(`pn-${firstRowId}`).value;
+                            if(!firstPn && parseInt(document.getElementById(`yp-${firstRowId}`).value) === 0) {
+                                removeTransactionRow(firstRowId);
+                            }
+                        }
+                    } else {
+                        showToast("Gagal", "Tidak ada baris valid ditemukan pada CSV.", "error");
+                    }
+                }, 300); 
+            };
+            
+            reader.readAsText(file);
         }
 
         // --- Fitur Row Transaksi ---
