@@ -235,9 +235,21 @@
                             <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
                             <input type="text" id="search-db" onkeyup="handleSearchDB()" placeholder="Cari PN, Model, Lokasi..." class="w-full pl-11 pr-4 py-2.5 rounded-xl border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none text-xs sm:text-sm font-medium">
                         </div>
-                        <button id="btn-add-database-wrapper" onclick="openModal()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shadow-sm shrink-0">
-                            <i class="fa-solid fa-plus text-xs"></i> Tambah Data Baru
-                        </button>
+                        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                            <!-- Input File Import CSV Master yang tersembunyi -->
+                            <input type="file" id="csv-upload-db" accept=".csv" class="hidden" onchange="processCSVUploadDB(event)">
+                            <button id="btn-import-db-csv" onclick="document.getElementById('csv-upload-db').click()" class="bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-bold hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shadow-sm shrink-0">
+                                <i class="fa-solid fa-file-import text-xs"></i> Import CSV Master
+                            </button>
+                            <button id="btn-add-database-wrapper" onclick="openModal()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shadow-sm shrink-0">
+                                <i class="fa-solid fa-plus text-xs"></i> Tambah Data Baru
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Info CSV Template Master -->
+                    <div id="db-csv-info" class="px-4 py-2 bg-slate-50 border-b border-gray-100 text-[11px] text-gray-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <span>Lakukan pengisian massal dengan mengunduh template terlebih dahulu.</span>
+                        <button onclick="downloadCSVMasterTemplate()" class="text-blue-600 hover:text-blue-800 font-bold underline"><i class="fa-solid fa-download mr-1"></i>Download Template CSV Master</button>
                     </div>
                     <div class="overflow-x-auto overflow-y-auto custom-scrollbar flex-1 min-h-0">
                         <table class="w-full text-left min-w-[700px] border-collapse">
@@ -1513,6 +1525,8 @@
 
         function adjustInterfaceAccess() {
             const btnAddDb = document.getElementById('btn-add-database-wrapper');
+            const btnImportDbCsv = document.getElementById('btn-import-db-csv');
+            const dbCsvInfo = document.getElementById('db-csv-info');
             const colAksiDb = document.querySelectorAll('.class-aksi-col');
             const colAksiHist = document.querySelectorAll('.class-aksi-history-col');
             const colAksiPending = document.querySelectorAll('.class-aksi-pending-col');
@@ -1521,8 +1535,12 @@
             
             if (roleUpper === 'GUEST' || roleUpper === 'OPERATOR') {
                 if (btnAddDb) btnAddDb.classList.add('hidden');
+                if (btnImportDbCsv) btnImportDbCsv.classList.add('hidden');
+                if (dbCsvInfo) dbCsvInfo.classList.add('hidden');
             } else {
                 if (btnAddDb) btnAddDb.classList.remove('hidden');
+                if (btnImportDbCsv) btnImportDbCsv.classList.remove('hidden');
+                if (dbCsvInfo) dbCsvInfo.classList.remove('hidden');
             }
             
             colAksiDb.forEach(el => {
@@ -1942,6 +1960,114 @@
             }
 
             return false;
+        }
+
+        // --- Fitur Download Template CSV Master ---
+        function downloadCSVMasterTemplate() {
+            const csvContent = "data:text/csv;charset=utf-8,Lokasi,Model,PN,PN1,Description,YP,YS\r\nLOKASI A,MODEL X,LOKASI A MODEL X,OP-01,Material Deskripsi A,10,5\r\nLOKASI B,MODEL Y,LOKASI B MODEL Y,,Material Deskripsi B,20,0\r\n";
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Template_Database_Master.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- Fitur Proses Import CSV Master ---
+        function processCSVUploadDB(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const rows = text.split('\n');
+                
+                if (rows.length < 2) {
+                    showToast("Error", "File CSV kosong atau format tidak valid.", "error");
+                    event.target.value = '';
+                    return;
+                }
+
+                showLoading(true, "Membaca & Memproses CSV Master...");
+
+                setTimeout(() => {
+                    const itemsToSave = [];
+                    let importedCount = 0;
+
+                    for (let i = 1; i < rows.length; i++) {
+                        const rowText = rows[i].trim();
+                        if (!rowText) continue;
+                        
+                        // Handle comma-separated values safely
+                        const cols = rowText.split(',');
+                        if (cols.length < 5) continue; // Minimal lokasi, model, pn, description, yp
+
+                        const lokasi = cols[0] ? cols[0].trim() : '';
+                        const model = cols[1] ? cols[1].trim() : '';
+                        let pn = cols[2] ? cols[2].trim() : '';
+                        const pn1 = cols[3] ? cols[3].trim() : '';
+                        const description = cols[4] ? cols[4].trim() : '';
+                        const yp = parseInt(cols[5]) || 0;
+                        const ys = parseInt(cols[6]) || 0;
+
+                        // Otomatis bikin PN jika kosong sesuai aturan autoFillPN
+                        if (!pn) {
+                            const parts = [];
+                            if (lokasi) parts.push(lokasi);
+                            if (model) parts.push(model);
+                            if (pn1) parts.push(pn1);
+                            pn = parts.join(' ').toUpperCase();
+                        }
+
+                        if (!pn) continue; // skip jika PN tidak bisa terbentuk
+
+                        itemsToSave.push({
+                            lokasi,
+                            model,
+                            pn,
+                            pn1,
+                            description,
+                            yp,
+                            ys
+                        });
+                        importedCount++;
+                    }
+
+                    if (itemsToSave.length === 0) {
+                        showLoading(false);
+                        showToast("Gagal", "Tidak ada baris valid ditemukan pada CSV.", "error");
+                        event.target.value = '';
+                        return;
+                    }
+
+                    // Kirim ke Backend dengan Batch API
+                    fetch('/api/database/batch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ items: itemsToSave })
+                    })
+                    .then(res => {
+                        if (!res.ok) return res.json().then(errData => { throw new Error(errData.message || 'Gagal menyimpan database master'); });
+                        return res.json();
+                    })
+                    .then(data => {
+                        event.target.value = '';
+                        showToast("Import Sukses", `${data.count} data Master berhasil ditambahkan/diperbarui!`, "success");
+                        fetchDatabase(1, () => {
+                            refreshAutocomplete(() => showLoading(false));
+                        });
+                    })
+                    .catch(err => {
+                        showLoading(false);
+                        event.target.value = '';
+                        showToast("Import Gagal", err.message, "error");
+                    });
+
+                }, 200);
+            };
+            reader.readAsText(file);
         }
 
         // --- Fitur Import & Export CSV Transaksi ---
@@ -2758,6 +2884,7 @@
             document.getElementById('confirm-modal').classList.remove('hidden');
         }
 
+        // ... Sisa fungsi JavaScript tidak diubah ...
         function deleteHistoryItem(rowNum) {
             const roleUpper = getRoleUpper();
             if (roleUpper === 'GUEST' || roleUpper === 'OPERATOR') return;

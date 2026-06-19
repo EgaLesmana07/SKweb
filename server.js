@@ -18,8 +18,8 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 console.log('✅ Terhubung sukses ke Cloud Database Supabase!');
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' })); // Menambah limit parser JSON untuk upload banyak item sekaligus
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
@@ -189,6 +189,110 @@ app.get('/api/database', async (req, res) => {
     totalItems: count, 
     uniqueModels 
   });
+});
+
+// --- API BATCH IMPORT DATABASE MASTER FROM CSV ---
+app.post('/api/database/batch', async (req, res) => {
+  const { items } = req.body;
+  if (!items || items.length === 0) {
+    return res.status(400).json({ success: false, message: 'Data CSV kosong atau tidak valid!' });
+  }
+
+  try {
+    const recordsToInsert = [];
+    const recordsToUpdate = [];
+
+    // Validasi data and siapkan query
+    for (const item of items) {
+      const lokasi = item.lokasi || '';
+      const model = item.model || '';
+      const pn = item.pn || '';
+      const pn1 = item.pn1 || '';
+      const description = item.description || '';
+      const ypVal = parseInt(item.yp) || 0;
+      const ysVal = parseInt(item.ys) || 0;
+      const totalVal = ypVal + ysVal;
+
+      if (!pn) continue;
+
+      // Periksa apakah item dengan PN dan Lokasi yang sama sudah terdaftar
+      const { data: existingItem, error: checkError } = await supabase
+        .from('data_master')
+        .select('id, yp, ys')
+        .eq('pn', pn)
+        .eq('lokasi', lokasi)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingItem) {
+        // Jika sudah ada, lakukan update stok (bisa ditambahkan / ditimpa. Di sini ditimpa sesuai nilai CSV)
+        recordsToUpdate.push({
+          id: existingItem.id,
+          lokasi,
+          model,
+          pn,
+          pn1,
+          description,
+          yp: ypVal,
+          ys: ysVal,
+          total: totalVal
+        });
+      } else {
+        // Jika belum ada, masukkan data baru
+        recordsToInsert.push({
+          lokasi,
+          model,
+          pn,
+          pn1,
+          description,
+          yp: ypVal,
+          ys: ysVal,
+          total: totalVal
+        });
+      }
+    }
+
+    // Eksekusi insert massal ke database
+    if (recordsToInsert.length > 0) {
+      const { error: insertError } = await supabase
+        .from('data_master')
+        .insert(recordsToInsert);
+      
+      if (insertError) throw insertError;
+    }
+
+    // Eksekusi update satu per satu secara sinkronus atau batch
+    if (recordsToUpdate.length > 0) {
+      for (const record of recordsToUpdate) {
+        const { error: updateError } = await supabase
+          .from('data_master')
+          .update({
+            model: record.model,
+            pn1: record.pn1,
+            description: record.description,
+            yp: record.yp,
+            ys: record.ys,
+            total: record.total
+          })
+          .eq('id', record.id);
+
+        if (updateError) throw updateError;
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Batch Import berhasil!', 
+      count: recordsToInsert.length + recordsToUpdate.length,
+      inserted: recordsToInsert.length,
+      updated: recordsToUpdate.length
+    });
+
+  } catch (error) {
+    console.error("Batch Database Master Error:", error);
+    res.status(500).json({ success: false, message: 'Gagal mengimpor database master', error: error.message });
+  }
 });
 
 app.post('/api/database', async (req, res) => {
