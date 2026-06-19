@@ -202,7 +202,6 @@ app.post('/api/database/batch', async (req, res) => {
     const recordsToInsert = [];
     const recordsToUpdate = [];
 
-    // Validasi data and siapkan query
     for (const item of items) {
       const lokasi = item.lokasi || '';
       const model = item.model || '';
@@ -215,7 +214,7 @@ app.post('/api/database/batch', async (req, res) => {
 
       if (!pn) continue;
 
-      // Periksa apakah item dengan PN dan Lokasi yang sama sudah terdaftar
+      // Periksa kecocokan data lama
       const { data: existingItem, error: checkError } = await supabase
         .from('data_master')
         .select('id, yp, ys')
@@ -226,7 +225,6 @@ app.post('/api/database/batch', async (req, res) => {
       if (checkError) throw checkError;
 
       if (existingItem) {
-        // Jika sudah ada, lakukan update stok (bisa ditambahkan / ditimpa. Di sini ditimpa sesuai nilai CSV)
         recordsToUpdate.push({
           id: existingItem.id,
           lokasi,
@@ -239,7 +237,6 @@ app.post('/api/database/batch', async (req, res) => {
           total: totalVal
         });
       } else {
-        // Jika belum ada, masukkan data baru
         recordsToInsert.push({
           lokasi,
           model,
@@ -253,7 +250,6 @@ app.post('/api/database/batch', async (req, res) => {
       }
     }
 
-    // Eksekusi insert massal ke database
     if (recordsToInsert.length > 0) {
       const { error: insertError } = await supabase
         .from('data_master')
@@ -262,7 +258,6 @@ app.post('/api/database/batch', async (req, res) => {
       if (insertError) throw insertError;
     }
 
-    // Eksekusi update satu per satu secara sinkronus atau batch
     if (recordsToUpdate.length > 0) {
       for (const record of recordsToUpdate) {
         const { error: updateError } = await supabase
@@ -619,67 +614,4 @@ app.get('/api/drilldown', async (req, res) => {
 
   const formattedLogs = (logsRows || []).map(d => ({ 
     ...d, 
-    waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : '-' 
-  }));
-
-  res.json({ recentLogs: formattedLogs, materialGroups });
-});
-
-app.get('/api/item-history', async (req, res) => {
-  const { data, error } = await supabase
-    .from('data_history_sc')
-    .select('waktu, in_out, yp, ys, keterangan, no_ro')
-    .eq('pn', req.query.pn)
-    .eq('lokasi', req.query.lokasi)
-    .order('id', { ascending: false })
-    .limit(20);
-
-  if (error) return res.status(500).json({ success: false, error: error.message });
-
-  const formatted = (data || []).map(d => ({
-    waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : '-',
-    type: d.in_out,
-    yp: d.yp,
-    ys: d.ys,
-    keterangan: d.keterangan,
-    noRo: d.no_ro
-  }));
-
-  res.json(formatted);
-});
-
-// --- API BACKUP ---
-app.get('/api/backup', async (req, res) => {
-  const search = req.query.search ? req.query.search.toLowerCase() : "";
-  const page = parseInt(req.query.page) || 1;
-  const pageSize = parseInt(req.query.pageSize) || 50;
-  const offset = (page - 1) * pageSize;
-
-  let query = supabase.from('data_backup_history_25_26').select('*', { count: 'exact' });
-
-  if (search) {
-    query = query.or(`pn.ilike.%${search}%,model.ilike.%${search}%,no_ro.ilike.%${search}%`);
-  }
-
-  const { data, count, error } = await query
-    .range(offset, offset + pageSize - 1)
-    .order('id', { ascending: false });
-  
-  if (error) return res.json({ success: true, data: [], totalPages: 0, currentPage: 1, totalItems: 0 });
-
-  const formattedData = (data || []).map(d => ({ 
-    ...d, 
-    rowNum: d.id, 
-    type: d.in_out, 
-    noRo: d.no_ro,
-    waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-'
-  }));
-
-  res.json({ success: true, data: formattedData, totalPages: Math.ceil(count / pageSize), currentPage: page, totalItems: count });
-});
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server aktif menggunakan Supabase di port http://localhost:${PORT}`);
-});
-// Tambahkan baris ini untuk Vercel
-module.exports = app;
+    waktu
