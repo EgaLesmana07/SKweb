@@ -980,7 +980,7 @@
 
         function renderLokasiList() {
             document.getElementById('btn-back-lokasi').classList.add('hidden');
-            document.getElementById('lokasi-modal-title').innerHTML = `<i class="fa-solid fa-layer-group text-blue-500"></i> Rekapitulasi Lokasi & Model`;
+            document.getElementById('lokasi-modal-title').innerHTML = `<i class="fa-solid fa-layer-group text-blue-500"></i> Denah Lokasi & Model`;
             const contentDiv = document.getElementById('lokasi-modal-content');
             
             const grouped = {};
@@ -1247,7 +1247,7 @@
             document.getElementById('tab-' + tabId)?.classList.remove('hidden');
             const activeBtn = document.getElementById('btn-' + tabId); if (activeBtn) { activeBtn.classList.remove('text-gray-500'); activeBtn.classList.add('sidebar-item-active'); }
             
-            const titles = { 'history': 'History SC', 'backup': 'Backup History', 'pending': 'SC Pending (Proses OUT)', 'registrasi': 'Kelola Akun' };
+            const titles = { 'history': 'History SC', 'backup': 'Backup History', 'pending': 'SC Pending', 'registrasi': 'Kelola Akun' };
             document.getElementById('page-title').innerText = titles[tabId] || tabId;
             if (tabId === 'registrasi') loadUsers();
             if (tabId === 'transaksi') transRows.forEach(rowId => updateRowStockInfo(rowId));
