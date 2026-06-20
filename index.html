@@ -43,7 +43,9 @@
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
             <div class="flex flex-col items-center text-center mb-8">
-                <div class="bg-blue-600 w-14 h-14 rounded-2xl text-white flex items-center justify-center font-black text-2xl shadow-lg shadow-blue-200 mb-4">SK</div>
+                <div class="bg-blue-600 w-14 h-14 rounded-2xl text-white flex items-center justify-center font-black text-2xl shadow-lg shadow-blue-200 mb-4">
+                    SK
+                </div>
                 <h1 class="text-2xl font-black text-gray-800 tracking-tight">Stock Keeper</h1>
                 <p class="text-xs text-gray-400 font-medium mt-1">Warehouse Database Management System</p>
             </div>
@@ -119,7 +121,7 @@
             <p class="text-xs sm:text-sm text-gray-500 mb-6 font-medium">Stok master akan dikurangi dan data dipindahkan ke History SC.</p>
             <div class="flex gap-3">
                 <button onclick="closeApproveModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-gray-600 text-sm transition-colors">Batal</button>
-                <button id="confirm-approve-btn" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-sm shadow-md transition-colors">Approve</button>
+                <button id="confirm-approve-btn" onclick="executeApprove()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-sm shadow-md transition-colors">Approve</button>
             </div>
         </div>
     </div>
@@ -157,6 +159,7 @@
             <div class="text-[10px] sm:text-xs font-medium text-gray-400 text-right truncate pl-2" id="current-time">Memuat waktu...</div>
         </header>
 
+        <!-- Container Utama: Layout Flex Dinamis -->
         <div class="flex-1 p-4 sm:p-6 flex flex-col min-h-0 overflow-hidden relative">
             
             <!-- Dashboard Tab -->
@@ -169,6 +172,7 @@
                                 <i class="fa-solid fa-arrow-left text-[10px]"></i> Kembali
                             </button>
                         </div>
+                        
                         <div id="doughnut-chart-container" class="relative w-full aspect-square max-h-[300px] mx-auto block">
                             <canvas id="categoryChart"></canvas>
                         </div>
@@ -195,6 +199,8 @@
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                        
+                        <!-- CARD TOTAL MODEL -->
                         <div onclick="openLokasiSummary()" class="bg-gradient-to-br from-blue-600 to-blue-700 p-6 rounded-3xl text-white shadow-lg sm:col-span-2 lg:col-span-1 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
                             <div class="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-white/20 transition-all"></div>
                             <div class="relative z-10 flex flex-col h-full justify-center">
@@ -208,6 +214,7 @@
                                 <p class="text-[10px] text-blue-200 mt-2 font-medium"><i class="fa-solid fa-hand-pointer mr-1"></i> Klik untuk rincian lokasi</p>
                             </div>
                         </div>
+
                         <div class="bg-white p-6 rounded-3xl border border-emerald-100 flex flex-col justify-center shadow-sm">
                             <p class="text-gray-400 text-xs sm:text-sm font-medium">Total Transaksi Masuk (IN)</p>
                             <h4 class="text-2xl sm:text-3xl font-black text-emerald-600 mt-1" id="stat-in">0</h4>
@@ -915,13 +922,9 @@
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
             if (isSidebarOpen) {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-                isSidebarOpen = false;
+                sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); isSidebarOpen = false;
             } else {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
-                isSidebarOpen = true;
+                sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); isSidebarOpen = true;
             }
         }
 
@@ -947,54 +950,32 @@
 
         function showToast(title, message, type = 'success') {
             const toast = document.getElementById('toast');
-            const toastTitle = document.getElementById('toast-title');
-            const toastMsg = document.getElementById('toast-msg');
-            const toastIcon = document.getElementById('toast-icon');
             const toastContainer = toast.querySelector('div');
-            toastTitle.innerText = title;
-            toastMsg.innerText = message;
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-msg').innerText = message;
+            
             if (type === 'success') {
                 toastContainer.className = "bg-white border-l-4 border-emerald-500 shadow-xl rounded-2xl p-4 flex items-center gap-3 min-w-[280px] sm:min-w-[320px] transition-all";
                 toastContainer.querySelector('.shrink-0').className = "bg-emerald-100 text-emerald-600 p-2 rounded-xl shrink-0";
-                toastIcon.className = "fa-solid fa-circle-check text-lg";
+                document.getElementById('toast-icon').className = "fa-solid fa-circle-check text-lg";
             } else if (type === 'error') {
                 toastContainer.className = "bg-white border-l-4 border-rose-500 shadow-xl rounded-2xl p-4 flex items-center gap-3 min-w-[280px] sm:min-w-[320px] transition-all";
                 toastContainer.querySelector('.shrink-0').className = "bg-rose-100 text-rose-600 p-2 rounded-xl shrink-0";
-                toastIcon.className = "fa-solid fa-triangle-exclamation text-lg";
+                document.getElementById('toast-icon').className = "fa-solid fa-triangle-exclamation text-lg";
             } else {
                 toastContainer.className = "bg-white border-l-4 border-blue-500 shadow-xl rounded-2xl p-4 flex items-center gap-3 min-w-[280px] sm:min-w-[320px] transition-all";
                 toastContainer.querySelector('.shrink-0').className = "bg-blue-100 text-blue-600 p-2 rounded-xl shrink-0";
-                toastIcon.className = "fa-solid fa-info-circle text-lg";
+                document.getElementById('toast-icon').className = "fa-solid fa-info-circle text-lg";
             }
-            toast.classList.remove('translate-y-[-100px]', 'opacity-0');
-            toast.classList.add('translate-y-0', 'opacity-100');
-            setTimeout(() => {
-                toast.classList.add('translate-y-[-100px]', 'opacity-0');
-                toast.classList.remove('translate-y-0', 'opacity-100');
-            }, 4000);
+            toast.classList.remove('translate-y-[-100px]', 'opacity-0'); toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => { toast.classList.add('translate-y-[-100px]', 'opacity-0'); toast.classList.remove('translate-y-0', 'opacity-100'); }, 4000);
         }
 
         function refreshAutocomplete(callback) {
-            fetch('/api/autocomplete')
-                .then(res => res.json())
-                .then(data => {
-                    autocompleteCache = data;
-                    if (callback) callback();
-                })
-                .catch(err => {
-                    console.error("Sinkronisasi gagal:", err);
-                    if (callback) callback();
-                });
+            fetch('/api/autocomplete').then(res => res.json()).then(data => { autocompleteCache = data; if (callback) callback(); }).catch(err => { if (callback) callback(); });
         }
 
-        // ==========================================
-        // FITUR DETAIL LOKASI & MODEL (MODAL REKAPITULASI)
-        // ==========================================
-        function openLokasiSummary() {
-            document.getElementById('modal-lokasi-summary').classList.remove('hidden');
-            renderLokasiList();
-        }
-
+        function openLokasiSummary() { document.getElementById('modal-lokasi-summary').classList.remove('hidden'); renderLokasiList(); }
         function closeLokasiModal() { document.getElementById('modal-lokasi-summary').classList.add('hidden'); }
 
         function renderLokasiList() {
@@ -1004,22 +985,12 @@
             
             const grouped = {};
             autocompleteCache.forEach(item => {
-                let lokasis = [];
-                if (item.lokasi) lokasis = item.lokasi.split(',').map(l => l.trim()).filter(Boolean);
-                if (lokasis.length === 0) lokasis = ['Tanpa Lokasi'];
-
-                lokasis.forEach(loc => {
-                    if (!grouped[loc]) grouped[loc] = new Set();
-                    if (item.model) grouped[loc].add(item.model);
-                });
+                let lokasis = item.lokasi ? item.lokasi.split(',').map(l => l.trim()).filter(Boolean) : ['Tanpa Lokasi'];
+                lokasis.forEach(loc => { if (!grouped[loc]) grouped[loc] = new Set(); if (item.model) grouped[loc].add(item.model); });
             });
 
             const lokasiKeys = Object.keys(grouped).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
-            
-            if (lokasiKeys.length === 0) {
-                contentDiv.innerHTML = `<div class="text-center py-8 text-gray-400 font-bold flex flex-col items-center"><i class="fa-solid fa-box-open text-4xl mb-3 text-gray-300"></i> Data Master kosong.</div>`;
-                return;
-            }
+            if (lokasiKeys.length === 0) { contentDiv.innerHTML = `<div class="text-center py-8 text-gray-400 font-bold flex flex-col items-center"><i class="fa-solid fa-box-open text-4xl mb-3 text-gray-300"></i> Data Master kosong.</div>`; return; }
 
             let html = `<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">`;
             lokasiKeys.forEach(loc => {
@@ -1029,19 +1000,13 @@
 
                 html += `
                     <div onclick="renderLokasiDetail('${loc.replace(/'/g, "\\'")}')" class="bg-white border border-gray-200 hover:border-blue-400 hover:shadow-md rounded-2xl p-4 sm:p-5 cursor-pointer transition-all flex flex-col items-center text-center group h-full">
-                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl sm:text-2xl mb-3 sm:mb-4 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                            <i class="fa-solid fa-warehouse"></i>
-                        </div>
+                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl sm:text-2xl mb-3 sm:mb-4 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm"><i class="fa-solid fa-warehouse"></i></div>
                         <h4 class="font-black text-gray-800 text-sm sm:text-lg mb-1 truncate w-full" title="${loc}">${loc}</h4>
                         <p class="text-[10px] text-gray-400 font-medium mb-4 h-6 overflow-hidden leading-tight" title="${modelsArray.join(', ')}">${previewModels || 'Tidak ada model'}</p>
-                        <div class="mt-auto">
-                            <span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm">${uniqueModelsCount} Model</span>
-                        </div>
-                    </div>
-                `;
+                        <div class="mt-auto"><span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm">${uniqueModelsCount} Model</span></div>
+                    </div>`;
             });
-            html += `</div>`;
-            contentDiv.innerHTML = html;
+            contentDiv.innerHTML = html + `</div>`;
         }
 
         function renderLokasiDetail(lokasiName) {
@@ -1051,200 +1016,116 @@
             
             const items = autocompleteCache.filter(item => {
                 if (!item.lokasi && lokasiName === 'Tanpa Lokasi') return true;
-                if (!item.lokasi) return false;
-                const lokasis = item.lokasi.split(',').map(l => l.trim()).filter(Boolean);
-                return lokasis.includes(lokasiName);
-            });
+                return item.lokasi && item.lokasi.split(',').map(l => l.trim()).includes(lokasiName);
+            }).sort((a, b) => (a.model || '').localeCompare(b.model || '', undefined, { numeric: true, sensitivity: 'base' }));
 
-            items.sort((a, b) => {
-                const modelA = a.model || '';
-                const modelB = b.model || '';
-                return modelA.localeCompare(modelB, undefined, { numeric: true, sensitivity: 'base' });
-            });
-
-            if (items.length === 0) {
-                contentDiv.innerHTML = `<div class="text-center py-8 text-gray-400 font-bold">Tidak ada rincian item</div>`;
-                return;
-            }
+            if (items.length === 0) { contentDiv.innerHTML = `<div class="text-center py-8 text-gray-400 font-bold">Tidak ada rincian item</div>`; return; }
 
             let html = `
                 <div class="bg-gray-50 rounded-xl p-4 mb-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4 border border-gray-100">
-                    <div>
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Item Part Number</p>
-                        <p class="text-xl font-black text-gray-800">${items.length} <span class="text-sm font-medium text-gray-500">Item</span></p>
-                    </div>
+                    <div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Item Part Number</p><p class="text-xl font-black text-gray-800">${items.length} <span class="text-sm font-medium text-gray-500">Item</span></p></div>
                     <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                         <div class="flex gap-6 sm:gap-4">
-                            <div class="text-left sm:text-right">
-                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total YP</p>
-                                <p class="text-lg font-black text-blue-600">${items.reduce((sum, i) => sum + (parseInt(i.yp) || 0), 0)}</p>
-                            </div>
-                            <div class="text-left sm:text-right border-l border-gray-200 pl-6 sm:pl-4">
-                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total YS</p>
-                                <p class="text-lg font-black text-orange-500">${items.reduce((sum, i) => sum + (parseInt(i.ys) || 0), 0)}</p>
-                            </div>
+                            <div class="text-left sm:text-right"><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total YP</p><p class="text-lg font-black text-blue-600">${items.reduce((sum, i) => sum + (parseInt(i.yp) || 0), 0)}</p></div>
+                            <div class="text-left sm:text-right border-l border-gray-200 pl-6 sm:pl-4"><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total YS</p><p class="text-lg font-black text-orange-500">${items.reduce((sum, i) => sum + (parseInt(i.ys) || 0), 0)}</p></div>
                         </div>
                         <div class="w-full sm:w-auto mt-2 sm:mt-0 sm:border-l sm:border-gray-200 sm:pl-4">
-                            <button onclick="exportLokasiDetailCSV('${lokasiName.replace(/'/g, "\\'")}')" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-colors">
-                                <i class="fa-solid fa-file-csv"></i> Export CSV
-                            </button>
+                            <button onclick="exportLokasiDetailCSV('${lokasiName.replace(/'/g, "\\'")}')" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
                         </div>
                     </div>
                 </div>
                 <div class="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
                     <table class="w-full text-left min-w-[700px] border-collapse bg-white">
-                        <thead class="text-[11px] font-bold text-gray-400 uppercase border-b border-gray-200">
-                            <tr>
-                                <th class="px-5 py-3.5">Model</th>
-                                <th class="px-5 py-3.5">Part Number (PN)</th>
-                                <th class="px-5 py-3.5">Deskripsi / Material</th>
-                                <th class="px-5 py-3.5 text-center bg-blue-50/50">YP</th>
-                                <th class="px-5 py-3.5 text-center bg-orange-50/50">YS</th>
-                                <th class="px-5 py-3.5 text-center">Total</th>
-                            </tr>
-                        </thead>
+                        <thead class="text-[11px] font-bold text-gray-400 uppercase border-b border-gray-200"><tr><th class="px-5 py-3.5">Model</th><th class="px-5 py-3.5">Part Number (PN)</th><th class="px-5 py-3.5">Deskripsi / Material</th><th class="px-5 py-3.5 text-center bg-blue-50/50">YP</th><th class="px-5 py-3.5 text-center bg-orange-50/50">YS</th><th class="px-5 py-3.5 text-center">Total</th></tr></thead>
                         <tbody class="divide-y divide-gray-100 text-xs text-gray-700">
             `;
-
             items.forEach(item => {
-                const yp = parseInt(item.yp) || 0;
-                const ys = parseInt(item.ys) || 0;
-                const total = yp + ys;
-                html += `
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="px-5 py-3 font-bold text-gray-800">${item.model || '-'}</td>
-                        <td class="px-5 py-3 font-black text-blue-600">${item.pn || '-'}</td>
-                        <td class="px-5 py-3 text-gray-500 max-w-[200px] truncate font-medium" title="${item.description}">${item.description || '-'}</td>
-                        <td class="px-5 py-3 text-center font-bold text-blue-600 bg-blue-50/20">${yp}</td>
-                        <td class="px-5 py-3 text-center font-bold text-orange-500 bg-orange-50/20">${ys}</td>
-                        <td class="px-5 py-3 text-center font-black text-emerald-600">${total}</td>
-                    </tr>
-                `;
+                const yp = parseInt(item.yp) || 0, ys = parseInt(item.ys) || 0;
+                html += `<tr class="hover:bg-gray-50 transition-colors"><td class="px-5 py-3 font-bold text-gray-800">${item.model || '-'}</td><td class="px-5 py-3 font-black text-blue-600">${item.pn || '-'}</td><td class="px-5 py-3 text-gray-500 max-w-[200px] truncate font-medium" title="${item.description}">${item.description || '-'}</td><td class="px-5 py-3 text-center font-bold text-blue-600 bg-blue-50/20">${yp}</td><td class="px-5 py-3 text-center font-bold text-orange-500 bg-orange-50/20">${ys}</td><td class="px-5 py-3 text-center font-black text-emerald-600">${yp + ys}</td></tr>`;
             });
-
-            html += `</tbody></table></div>`;
-            contentDiv.innerHTML = html;
+            contentDiv.innerHTML = html + `</tbody></table></div>`;
         }
 
         function exportLokasiDetailCSV(lokasiName) {
             showLoading(true, "Mempersiapkan File CSV...");
-            const items = autocompleteCache.filter(item => {
-                if (!item.lokasi && lokasiName === 'Tanpa Lokasi') return true;
-                if (!item.lokasi) return false;
-                const lokasis = item.lokasi.split(',').map(l => l.trim()).filter(Boolean);
-                return lokasis.includes(lokasiName);
-            });
-
-            if (items.length === 0) {
-                showLoading(false);
-                showToast("Export Gagal", "Tidak ada data rincian.", "error");
-                return;
-            }
+            const items = autocompleteCache.filter(item => (!item.lokasi && lokasiName === 'Tanpa Lokasi') || (item.lokasi && item.lokasi.split(',').map(l => l.trim()).includes(lokasiName)));
+            if (items.length === 0) { showLoading(false); showToast("Export Gagal", "Tidak ada data rincian.", "error"); return; }
+            
             items.sort((a, b) => a.model?.localeCompare(b.model, undefined, { numeric: true, sensitivity: 'base' }));
-
             let csvContent = "data:text/csv;charset=utf-8,Model,Part Number (PN),Deskripsi / Material,Stok YP,Stok YS,Total Stok\r\n";
             items.forEach(item => {
-                const yp = parseInt(item.yp) || 0;
-                const ys = parseInt(item.ys) || 0;
+                const yp = parseInt(item.yp) || 0, ys = parseInt(item.ys) || 0;
                 csvContent += [`"${item.model || ''}"`, `"${item.pn || ''}"`, `"${item.description || ''}"`, yp, ys, yp+ys].join(",") + "\r\n";
             });
             
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
+            const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent));
             link.setAttribute("download", `Detail_Lokasi_${lokasiName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${new Date().toISOString().slice(0, 10)}.csv`);
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
-            showLoading(false);
-            showToast("Sukses", "Data rincian Lokasi berhasil diunduh.", "success");
+            showLoading(false); showToast("Sukses", "Data rincian Lokasi berhasil diunduh.", "success");
         }
 
         function closeDetailModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
 
         function showDetailDB(event, index) {
             if(event && event.target.closest('button')) return;
-            const item = renderedDbData[index];
-            if (!item) return;
+            const item = renderedDbData[index]; if (!item) return;
 
-            document.getElementById('det-db-pn').innerText = item.pn || '-';
-            document.getElementById('det-db-model').innerText = item.model || '-';
-            document.getElementById('det-db-lokasi').innerText = item.lokasi || '-';
-            document.getElementById('det-db-pn1').innerText = item.pn1 || '-';
-            document.getElementById('det-db-desc').innerText = item.description || '-';
-            document.getElementById('det-db-yp').innerText = item.yp || 0;
-            document.getElementById('det-db-ys').innerText = item.ys || 0;
-            document.getElementById('det-db-total').innerText = item.total || 0;
+            document.getElementById('det-db-pn').innerText = item.pn || '-'; document.getElementById('det-db-model').innerText = item.model || '-';
+            document.getElementById('det-db-lokasi').innerText = item.lokasi || '-'; document.getElementById('det-db-pn1').innerText = item.pn1 || '-';
+            document.getElementById('det-db-desc').innerText = item.description || '-'; document.getElementById('det-db-yp').innerText = item.yp || 0;
+            document.getElementById('det-db-ys').innerText = item.ys || 0; document.getElementById('det-db-total').innerText = item.total || 0;
 
             document.getElementById('modal-detail-db').classList.remove('hidden');
             const tbody = document.getElementById('det-db-history-body');
             tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400 font-bold"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat Riwayat...</td></tr>`;
 
-            fetch(`/api/history?search=${encodeURIComponent(item.pn)}&page=1&pageSize=100`)
-                .then(res => res.json())
-                .then(res => {
-                    const exactMatches = (res.data || []).filter(h => String(h.pn).toLowerCase().trim() === String(item.pn).toLowerCase().trim());
-                    if(exactMatches.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400 italic text-[11px]">Belum ada riwayat transaksi.</td></tr>`;
-                        return;
-                    }
-                    tbody.innerHTML = exactMatches.map(h => `
-                        <tr class="hover:bg-blue-50/20 transition-colors">
-                            <td class="px-4 py-2.5 text-gray-500 font-medium">${h.waktu || '-'}</td>
-                            <td class="px-4 py-2.5"><span class="px-2 py-1 rounded-md text-[9px] font-black tracking-wider ${h.type === 'IN' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${h.type}</span></td>
-                            <td class="px-4 py-2.5 font-semibold text-gray-600 truncate max-w-[120px]" title="${h.keterangan}">${h.keterangan || '-'}</td>
-                            <td class="px-4 py-2.5 text-center font-bold text-blue-500">${h.yp || 0}</td>
-                            <td class="px-4 py-2.5 text-center font-bold text-orange-500">${h.ys || 0}</td>
-                            <td class="px-4 py-2.5 text-gray-500 font-medium text-[10px]">${h.odf || '-'}<br>${h.noRo || '-'}</td>
-                        </tr>
-                    `).join('');
-                })
-                .catch(() => { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-rose-400 italic text-[11px]">Gagal memuat: API Error</td></tr>`; });
+            fetch(`/api/history?search=${encodeURIComponent(item.pn)}&page=1&pageSize=100`).then(res => res.json()).then(res => {
+                const exactMatches = (res.data || []).filter(h => String(h.pn).toLowerCase().trim() === String(item.pn).toLowerCase().trim());
+                if(exactMatches.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400 italic text-[11px]">Belum ada riwayat transaksi.</td></tr>`; return; }
+                tbody.innerHTML = exactMatches.map(h => `
+                    <tr class="hover:bg-blue-50/20 transition-colors">
+                        <td class="px-4 py-2.5 text-gray-500 font-medium">${h.waktu || '-'}</td>
+                        <td class="px-4 py-2.5"><span class="px-2 py-1 rounded-md text-[9px] font-black tracking-wider ${h.type === 'IN' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${h.type}</span></td>
+                        <td class="px-4 py-2.5 font-semibold text-gray-600 truncate max-w-[120px]" title="${h.keterangan}">${h.keterangan || '-'}</td>
+                        <td class="px-4 py-2.5 text-center font-bold text-blue-500">${h.yp || 0}</td>
+                        <td class="px-4 py-2.5 text-center font-bold text-orange-500">${h.ys || 0}</td>
+                        <td class="px-4 py-2.5 text-gray-500 font-medium text-[10px]">${h.odf || '-'}<br>${h.noRo || '-'}</td>
+                    </tr>
+                `).join('');
+            }).catch(() => { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-rose-400 italic text-[11px]">Gagal memuat: API Error</td></tr>`; });
         }
 
         function showDetailTrans(event, source, index) {
             if(event && event.target.closest('button')) return;
             let item = null, statusText = '', statusClass = '';
-            const wrapperPicker = document.getElementById('wrapper-det-trans-picker');
-            const wrapperApproval = document.getElementById('wrapper-det-trans-approval');
-            const authSection = document.getElementById('det-trans-auth-section');
+            const wrapperPicker = document.getElementById('wrapper-det-trans-picker'), wrapperApproval = document.getElementById('wrapper-det-trans-approval'), authSection = document.getElementById('det-trans-auth-section');
 
             if (source === 'history') {
-                item = renderedHistoryData[index];
-                document.getElementById('det-trans-title').innerHTML = '<i class="fa-solid fa-clock-rotate-left text-blue-500"></i> Detail History SC';
+                item = renderedHistoryData[index]; document.getElementById('det-trans-title').innerHTML = '<i class="fa-solid fa-clock-rotate-left text-blue-500"></i> Detail History SC';
                 statusText = 'Completed'; statusClass = 'bg-emerald-100 text-emerald-700';
                 authSection?.classList.remove('hidden'); wrapperPicker?.classList.remove('hidden'); wrapperApproval?.classList.remove('hidden');
             } else if (source === 'pending') {
-                item = renderedPendingData[index];
-                document.getElementById('det-trans-title').innerHTML = '<i class="fa-solid fa-clipboard-list text-orange-500"></i> Detail SC Pending';
+                item = renderedPendingData[index]; document.getElementById('det-trans-title').innerHTML = '<i class="fa-solid fa-clipboard-list text-orange-500"></i> Detail SC Pending';
                 statusText = 'Waiting Approval'; statusClass = 'bg-orange-100 text-orange-700 animate-pulse';
                 authSection?.classList.remove('hidden'); wrapperPicker?.classList.remove('hidden'); wrapperApproval?.classList.add('hidden');
             } else if (source === 'backup') {
-                item = renderedBackupData[index];
-                document.getElementById('det-trans-title').innerHTML = '<i class="fa-solid fa-box-archive text-gray-500"></i> Detail Backup History';
+                item = renderedBackupData[index]; document.getElementById('det-trans-title').innerHTML = '<i class="fa-solid fa-box-archive text-gray-500"></i> Detail Backup History';
                 statusText = 'Archived'; statusClass = 'bg-gray-200 text-gray-600';
                 authSection?.classList.add('hidden');
             }
 
             if (!item) return;
-
             document.getElementById('det-trans-waktu').innerText = item.waktu || '-';
-            const elType = document.getElementById('det-trans-type');
-            elType.innerText = item.type || '-';
-            elType.className = `font-black text-sm px-2 py-1 rounded-md ${item.type === 'IN' ? 'text-emerald-700 bg-emerald-50' : 'text-rose-700 bg-rose-50'}`;
+            const elType = document.getElementById('det-trans-type'); elType.innerText = item.type || '-'; elType.className = `font-black text-sm px-2 py-1 rounded-md ${item.type === 'IN' ? 'text-emerald-700 bg-emerald-50' : 'text-rose-700 bg-rose-50'}`;
             document.getElementById('det-trans-status').innerHTML = `<span class="px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${statusClass}">${statusText}</span>`;
-            document.getElementById('det-trans-pn').innerText = item.pn || '-';
-            document.getElementById('det-trans-model').innerText = item.model || '-';
-            document.getElementById('det-trans-material').innerText = item.material || '-';
-            document.getElementById('det-trans-lokasi').innerText = item.lokasi || '-';
-            document.getElementById('det-trans-ket').innerText = item.keterangan || '-';
-            document.getElementById('det-trans-yp').innerText = item.yp || 0;
-            document.getElementById('det-trans-ys').innerText = item.ys || 0;
-            document.getElementById('det-trans-odf').innerText = item.odf || '-';
+            document.getElementById('det-trans-pn').innerText = item.pn || '-'; document.getElementById('det-trans-model').innerText = item.model || '-';
+            document.getElementById('det-trans-material').innerText = item.material || '-'; document.getElementById('det-trans-lokasi').innerText = item.lokasi || '-';
+            document.getElementById('det-trans-ket').innerText = item.keterangan || '-'; document.getElementById('det-trans-yp').innerText = item.yp || 0;
+            document.getElementById('det-trans-ys').innerText = item.ys || 0; document.getElementById('det-trans-odf').innerText = item.odf || '-';
             document.getElementById('det-trans-ro').innerText = item.noRo || '-';
 
-            const elPicker = document.getElementById('det-trans-picker');
-            const elApproval = document.getElementById('det-trans-approval');
-            if (elPicker) elPicker.innerText = item.picker || '-';
-            if (elApproval) elApproval.innerHTML = item.approval ? `<span class="bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100 text-xs text-indigo-700 font-bold inline-block">${item.approval}</span>` : '-';
+            if (wrapperPicker) document.getElementById('det-trans-picker').innerText = item.picker || '-';
+            if (wrapperApproval) document.getElementById('det-trans-approval').innerHTML = item.approval ? `<span class="bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100 text-xs text-indigo-700 font-bold inline-block">${item.approval}</span>` : '-';
             document.getElementById('modal-detail-trans').classList.remove('hidden');
         }
 
@@ -1253,55 +1134,38 @@
         // ==========================================
         function checkSavedSession() {
             const savedSession = localStorage.getItem('sk_user_session');
-            if (savedSession) {
-                try { applyUserSession(JSON.parse(savedSession)); } 
-                catch(e) { localStorage.removeItem('sk_user_session'); applyGuestSession(); }
-            } else { applyGuestSession(); }
+            if (savedSession) { try { applyUserSession(JSON.parse(savedSession)); } catch(e) { localStorage.removeItem('sk_user_session'); applyGuestSession(); } } else { applyGuestSession(); }
         }
 
         function showLoginModal(show) {
             const loginScreenEl = document.getElementById('login-screen');
             if (show) {
-                loginScreenEl.classList.remove('hidden');
-                document.getElementById('login-form')?.reset();
-                document.getElementById('login-error').classList.add('hidden');
-                const passInput = document.getElementById('login-password');
-                const icon = document.getElementById('password-toggle-icon');
+                loginScreenEl.classList.remove('hidden'); document.getElementById('login-form')?.reset(); document.getElementById('login-error').classList.add('hidden');
+                const passInput = document.getElementById('login-password'), icon = document.getElementById('password-toggle-icon');
                 if (passInput && icon) { passInput.type = 'password'; icon.className = "fa-solid fa-eye text-sm"; }
             } else { loginScreenEl.classList.add('hidden'); }
         }
 
         function togglePasswordVisibility() {
-            const passInput = document.getElementById('login-password');
-            const icon = document.getElementById('password-toggle-icon');
+            const passInput = document.getElementById('login-password'), icon = document.getElementById('password-toggle-icon');
             if (passInput.type === 'password') { passInput.type = 'text'; icon.className = "fa-solid fa-eye-slash text-sm"; } 
             else { passInput.type = 'password'; icon.className = "fa-solid fa-eye text-sm"; }
         }
 
         function handleLoginSubmit(event) {
             event.preventDefault();
-            const btnSubmit = document.getElementById('btn-login-submit');
-            document.getElementById('login-error').classList.add('hidden');
+            const btnSubmit = document.getElementById('btn-login-submit'); document.getElementById('login-error').classList.add('hidden');
             btnSubmit.disabled = true; btnSubmit.innerHTML = `<span>MEMVERIFIKASI...</span>`;
             
-            fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: document.getElementById('login-username').value, password: document.getElementById('login-password').value })
-            }).then(response => { if (!response.ok) throw new Error('Koneksi server gagal'); return response.json(); })
+            fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('login-username').value, password: document.getElementById('login-password').value }) })
+            .then(response => { if (!response.ok) throw new Error('Koneksi server gagal'); return response.json(); })
             .then(res => {
                 btnSubmit.disabled = false; btnSubmit.innerHTML = `<span>MASUK KE SISTEM</span> <i class="fa-solid fa-arrow-right text-xs"></i>`;
-                if (res.success) {
-                    localStorage.setItem('sk_user_session', JSON.stringify(res));
-                    applyUserSession(res); showLoginModal(false); showToast("Login Berhasil", `Selamat datang, ${res.fullName}!`, "success");
-                } else {
-                    document.getElementById('login-error-text').innerText = res.message || "Username atau password salah!";
-                    document.getElementById('login-error').classList.remove('hidden');
-                }
+                if (res.success) { localStorage.setItem('sk_user_session', JSON.stringify(res)); applyUserSession(res); showLoginModal(false); showToast("Login Berhasil", `Selamat datang, ${res.fullName}!`, "success"); } 
+                else { document.getElementById('login-error-text').innerText = res.message || "Username atau password salah!"; document.getElementById('login-error').classList.remove('hidden'); }
             }).catch(err => {
                 btnSubmit.disabled = false; btnSubmit.innerHTML = `<span>MASUK KE SISTEM</span> <i class="fa-solid fa-arrow-right text-xs"></i>`;
-                document.getElementById('login-error-text').innerText = "Koneksi gagal: " + (err.message || "Unknown error");
-                document.getElementById('login-error').classList.remove('hidden');
+                document.getElementById('login-error-text').innerText = "Koneksi gagal: " + (err.message || "Unknown error"); document.getElementById('login-error').classList.remove('hidden');
             });
         }
 
@@ -1312,37 +1176,26 @@
             let badgeClass = "bg-blue-100 text-blue-700 font-extrabold text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider inline-block mt-0.5";
             if (roleUpper === 'SUPERADMIN') badgeClass = "bg-purple-100 text-purple-700 font-extrabold text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider inline-block mt-0.5";
             if (roleUpper === 'OPERATOR') badgeClass = "bg-emerald-100 text-emerald-700 font-extrabold text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider inline-block mt-0.5";
-            const badge = document.getElementById('user-role-badge');
-            badge.innerText = currentRole; badge.className = badgeClass;
+            const badge = document.getElementById('user-role-badge'); badge.innerText = currentRole; badge.className = badgeClass;
             adjustInterfaceAccess(); loadInitialData(); switchTab('dashboard');
         }
 
         function applyGuestSession() {
-            currentUser = null; isLoggedIn = false; currentRole = 'Guest';
-            renderSidebarMenu(); renderProfileSection();
-            document.getElementById('user-role-badge').innerText = 'Guest';
-            document.getElementById('user-role-badge').className = "bg-gray-100 text-gray-500 font-extrabold text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider inline-block mt-0.5";
+            currentUser = null; isLoggedIn = false; currentRole = 'Guest'; renderSidebarMenu(); renderProfileSection();
+            const badge = document.getElementById('user-role-badge'); badge.innerText = 'Guest'; badge.className = "bg-gray-100 text-gray-500 font-extrabold text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider inline-block mt-0.5";
             adjustInterfaceAccess(); loadInitialData(); switchTab('dashboard');
         }
 
         function renderSidebarMenu() {
             const roleUpper = getRoleUpper();
             let html = `
-                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="sidebar-item-active flex items-center w-full px-4 py-3 rounded-xl text-left transition-all duration-200 text-sm font-semibold text-white">
-                    <i class="fa-solid fa-chart-line w-8"></i> Dashboard
-                </button>
-                <button onclick="switchTab('database')" id="btn-database" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold">
-                    <i class="fa-solid fa-database w-8"></i> Database
-                </button>
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="sidebar-item-active flex items-center w-full px-4 py-3 rounded-xl text-left transition-all duration-200 text-sm font-semibold text-white"><i class="fa-solid fa-chart-line w-8"></i> Dashboard</button>
+                <button onclick="switchTab('database')" id="btn-database" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-database w-8"></i> Database</button>
             `;
             if (roleUpper === 'ADMIN' || roleUpper === 'SUPERADMIN' || roleUpper === 'OPERATOR') {
                 html += `
-                    <button onclick="switchTab('transaksi')" id="btn-transaksi" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold">
-                        <i class="fa-solid fa-right-left w-8"></i> In / Out Barang
-                    </button>
-                    <button onclick="switchTab('pending')" id="btn-pending" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative">
-                        <i class="fa-solid fa-clipboard-list w-8"></i> SC Pending
-                    </button>
+                    <button onclick="switchTab('transaksi')" id="btn-transaksi" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-right-left w-8"></i> In / Out Barang</button>
+                    <button onclick="switchTab('pending')" id="btn-pending" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-clipboard-list w-8"></i> SC Pending</button>
                 `;
             }
             html += `<button onclick="switchTab('history')" id="btn-history" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-clock-rotate-left w-8"></i> History SC</button>`;
@@ -1359,10 +1212,7 @@
             const section = document.getElementById('sidebar-user-section');
             if (isLoggedIn && currentUser) {
                 section.innerHTML = `
-                    <div class="flex items-center gap-3 px-2">
-                        <div class="bg-blue-100 text-blue-600 w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm"><i class="fa-solid fa-user-shield"></i></div>
-                        <div class="min-w-0"><p class="text-xs font-bold text-gray-700 truncate">${currentUser.fullName}</p><p class="text-[10px] text-gray-400 font-semibold truncate">@${currentUser.username}</p></div>
-                    </div>
+                    <div class="flex items-center gap-3 px-2"><div class="bg-blue-100 text-blue-600 w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm"><i class="fa-solid fa-user-shield"></i></div><div class="min-w-0"><p class="text-xs font-bold text-gray-700 truncate">${currentUser.fullName}</p><p class="text-[10px] text-gray-400 font-semibold truncate">@${currentUser.username}</p></div></div>
                     <button onclick="handleLogout()" class="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
                 `;
             } else {
@@ -1374,46 +1224,28 @@
         }
 
         function adjustInterfaceAccess() {
-            const btnAddDb = document.getElementById('btn-add-database-wrapper');
-            const colAksiDb = document.querySelectorAll('.class-aksi-col');
-            const colAksiHist = document.querySelectorAll('.class-aksi-history-col');
-            const colAksiPending = document.querySelectorAll('.class-aksi-pending-col');
-            const roleUpper = getRoleUpper();
-            
+            const btnAddDb = document.getElementById('btn-add-database-wrapper'), roleUpper = getRoleUpper();
             if (btnAddDb) btnAddDb.classList.toggle('hidden', roleUpper === 'GUEST' || roleUpper === 'OPERATOR');
-            
-            colAksiDb.forEach(el => el.classList.toggle('hidden', !(roleUpper === 'SUPERADMIN' || roleUpper === 'ADMIN')));
-            colAksiHist.forEach(el => el.classList.toggle('hidden', !(roleUpper === 'SUPERADMIN' || roleUpper === 'ADMIN')));
-            colAksiPending.forEach(el => el.classList.toggle('hidden', !(roleUpper === 'SUPERADMIN' || roleUpper === 'ADMIN')));
+            document.querySelectorAll('.class-aksi-col, .class-aksi-history-col, .class-aksi-pending-col').forEach(el => el.classList.toggle('hidden', !(roleUpper === 'SUPERADMIN' || roleUpper === 'ADMIN')));
         }
 
         function handleLogout() {
             showLoading(true, "Keluar dari sesi...");
-            setTimeout(() => {
-                document.getElementById('login-form')?.reset();
-                localStorage.removeItem('sk_user_session'); applyGuestSession();
-                showToast("Sesi Berakhir", "Anda sekarang masuk sebagai Guest.", "info");
-            }, 600);
+            setTimeout(() => { document.getElementById('login-form')?.reset(); localStorage.removeItem('sk_user_session'); applyGuestSession(); showToast("Sesi Berakhir", "Anda sekarang masuk sebagai Guest.", "info"); }, 600);
         }
 
         function switchTab(tabId) {
             const roleUpper = getRoleUpper();
-            if (roleUpper === 'GUEST' && ['transaksi', 'backup', 'pending'].includes(tabId)) {
-                showToast("Akses Ditolak", "Silakan login terlebih dahulu.", "error"); return switchTab('dashboard');
-            }
-            if (tabId === 'registrasi' && roleUpper !== 'SUPERADMIN') {
-                showToast("Akses Ditolak", "Khusus SuperAdmin.", "error"); return switchTab('dashboard');
-            }
+            if (roleUpper === 'GUEST' && ['transaksi', 'backup', 'pending'].includes(tabId)) { showToast("Akses Ditolak", "Silakan login terlebih dahulu.", "error"); return switchTab('dashboard'); }
+            if (tabId === 'registrasi' && roleUpper !== 'SUPERADMIN') { showToast("Akses Ditolak", "Khusus SuperAdmin.", "error"); return switchTab('dashboard'); }
 
             ['dashboard', 'database', 'transaksi', 'history', 'backup', 'pending', 'registrasi'].forEach(id => {
                 document.getElementById('tab-' + id)?.classList.add('hidden');
-                const btn = document.getElementById('btn-' + id);
-                if (btn) { btn.classList.remove('sidebar-item-active', 'text-white'); btn.classList.add('text-gray-500'); }
+                const btn = document.getElementById('btn-' + id); if (btn) { btn.classList.remove('sidebar-item-active', 'text-white'); btn.classList.add('text-gray-500'); }
             });
             
             document.getElementById('tab-' + tabId)?.classList.remove('hidden');
-            const activeBtn = document.getElementById('btn-' + tabId);
-            if (activeBtn) { activeBtn.classList.remove('text-gray-500'); activeBtn.classList.add('sidebar-item-active'); }
+            const activeBtn = document.getElementById('btn-' + tabId); if (activeBtn) { activeBtn.classList.remove('text-gray-500'); activeBtn.classList.add('sidebar-item-active'); }
             
             const titles = { 'history': 'History SC', 'backup': 'Backup History', 'pending': 'SC Pending (Proses OUT)', 'registrasi': 'Kelola Akun' };
             document.getElementById('page-title').innerText = titles[tabId] || tabId;
@@ -1424,17 +1256,12 @@
 
         function loadInitialData() {
             showLoading(true, "Memuat Data Warehouse...");
-            const roleUpper = getRoleUpper();
-            let totalSteps = roleUpper === 'GUEST' ? 4 : (roleUpper === 'SUPERADMIN' ? 7 : 6);
-            let counter = 0;
+            const roleUpper = getRoleUpper(); let totalSteps = roleUpper === 'GUEST' ? 4 : (roleUpper === 'SUPERADMIN' ? 7 : 6); let counter = 0;
             const checkDone = () => { counter++; if (counter >= totalSteps) showLoading(false); };
 
-            refreshAutocomplete(() => checkDone());
-            fetchDatabase(1, () => checkDone());
-            fetchHistory(1, () => checkDone());
-            
+            refreshAutocomplete(() => checkDone()); fetchDatabase(1, () => checkDone()); fetchHistory(1, () => checkDone());
             if (roleUpper !== 'GUEST') { fetchBackup(1, () => checkDone()); fetchPending(1, () => checkDone()); }
-            if (roleUpper === 'SUPERADMIN') { loadUsers(() => checkDone()); }
+            if (roleUpper === 'SUPERADMIN') loadUsers(() => checkDone());
             loadChartOptimized(() => checkDone());
         }
 
@@ -1446,16 +1273,9 @@
                     tbody.innerHTML = res.data.length === 0 ? `<tr><td colspan="5" class="text-center py-6 text-gray-400 font-bold">Belum ada data</td></tr>` : 
                         res.data.map((u, idx) => `
                         <tr class="hover:bg-gray-50 transition-colors group">
-                            <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-gray-700">${u.fullName}</td>
-                            <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-medium text-gray-500">@${u.username}</td>
-                            <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-400 font-mono text-[10px]">••••••••</td>
+                            <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-gray-700">${u.fullName}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-medium text-gray-500">@${u.username}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-400 font-mono text-[10px]">••••••••</td>
                             <td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase ${u.role === 'SuperAdmin' ? 'bg-purple-100 text-purple-700' : u.role === 'Operator' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}">${u.role}</span></td>
-                            <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-center">
-                                <div class="flex items-center justify-center gap-1.5">
-                                    <button onclick="editUser(${idx})" class="text-blue-500 hover:bg-blue-100 p-1.5 rounded-lg"><i class="fa-solid fa-pen text-xs"></i></button>
-                                    <button onclick="deleteUser(${u.rowNum})" class="text-rose-500 hover:bg-rose-100 p-1.5 rounded-lg"><i class="fa-solid fa-trash-can text-xs"></i></button>
-                                </div>
-                            </td>
+                            <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-center"><div class="flex items-center justify-center gap-1.5"><button onclick="editUser(${idx})" class="text-blue-500 hover:bg-blue-100 p-1.5 rounded-lg"><i class="fa-solid fa-pen text-xs"></i></button><button onclick="deleteUser(${u.rowNum})" class="text-rose-500 hover:bg-rose-100 p-1.5 rounded-lg"><i class="fa-solid fa-trash-can text-xs"></i></button></div></td>
                         </tr>`).join('');
                 }
                 if (callback) callback();
@@ -1482,26 +1302,19 @@
 
         function deleteUser(rowNum) {
             if (getRoleUpper() !== 'SUPERADMIN') return;
-            pendingDeleteRow = rowNum; pendingDeleteType = 'user';
-            document.getElementById('confirm-modal-desc').innerText = "Hapus akun pengguna ini?"; document.getElementById('confirm-modal').classList.remove('hidden');
+            pendingDeleteRow = rowNum; pendingDeleteType = 'user'; document.getElementById('confirm-modal-desc').innerText = "Hapus akun pengguna ini?"; document.getElementById('confirm-modal').classList.remove('hidden');
         }
 
         function handleRegisterSubmit(event) {
             event.preventDefault();
-            const payload = {
-                fullName: document.getElementById('reg-fullname').value, username: document.getElementById('reg-username').value,
-                password: document.getElementById('reg-password').value, role: document.getElementById('reg-role').value
-            };
+            const payload = { fullName: document.getElementById('reg-fullname').value, username: document.getElementById('reg-username').value, password: document.getElementById('reg-password').value, role: document.getElementById('reg-role').value };
             const rowNum = document.getElementById('reg-user-rownum').value;
-            const btnSubmit = document.getElementById('btn-register-submit');
-            const originalHtml = btnSubmit.innerHTML;
-            btnSubmit.disabled = true; btnSubmit.innerHTML = `PROSES...`;
+            const btnSubmit = document.getElementById('btn-register-submit'); const originalHtml = btnSubmit.innerHTML; btnSubmit.disabled = true; btnSubmit.innerHTML = `PROSES...`;
 
             fetch(rowNum ? `/api/users/${rowNum}` : `/api/register`, { method: rowNum ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
             .then(res => res.json()).then(data => {
                 btnSubmit.disabled = false; btnSubmit.innerHTML = originalHtml;
-                if (data.success) { showToast("Update Berhasil", data.message, "success"); closeUserModal(); loadUsers(); } 
-                else { showToast("Gagal", data.message, "error"); }
+                if (data.success) { showToast("Update Berhasil", data.message, "success"); closeUserModal(); loadUsers(); } else { showToast("Gagal", data.message, "error"); }
             }).catch(() => { btnSubmit.disabled = false; btnSubmit.innerHTML = originalHtml; showToast("Error", "Gagal menyimpan", "error"); });
         }
 
@@ -1570,31 +1383,21 @@
         }
 
         function isRowMatch(row, searchStr) {
-            if (!searchStr) return false;
-            const norm = searchStr.trim().toLowerCase();
-            const pn = String(row.pn || '').trim().toLowerCase();
+            if (!searchStr) return false; const norm = searchStr.trim().toLowerCase(), pn = String(row.pn || '').trim().toLowerCase();
             if (!pn) return false;
-            if (norm.includes(pn) || pn.includes(norm)) return true;
-            if (String(row.model || '').trim().toLowerCase().includes(norm)) return true;
-            if (String(row.lokasi || '').trim().toLowerCase().includes(norm)) return true;
+            if (norm.includes(pn) || pn.includes(norm) || String(row.model || '').trim().toLowerCase().includes(norm) || String(row.lokasi || '').trim().toLowerCase().includes(norm)) return true;
             const kws = norm.split(/\s+/).filter(Boolean);
-            if (kws.length > 0) {
-                const combined = `${row.lokasi||''} ${row.model||''} ${row.pn||''} ${row.description||''}`.toLowerCase();
-                return kws.every(kw => combined.includes(kw));
-            }
+            if (kws.length > 0) return kws.every(kw => `${row.lokasi||''} ${row.model||''} ${row.pn||''} ${row.description||''}`.toLowerCase().includes(kw));
             return false;
         }
 
         function downloadCSVMasterTemplate() {
-            const link = document.createElement("a");
-            link.setAttribute("href", encodeURI("data:text/csv;charset=utf-8,Lokasi,Model,PN,PN1,Description,YP,YS\r\nPanel A,100Z570SP,Panel A 100Z570SP 448021,448021,Contoh Material A,5,2\r\n"));
-            link.setAttribute("download", "Template_Database_Master.csv");
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            const link = document.createElement("a"); link.setAttribute("href", encodeURI("data:text/csv;charset=utf-8,Lokasi,Model,PN,PN1,Description,YP,YS\r\nPanel A,100Z570SP,Panel A 100Z570SP 448021,448021,Contoh Material A,5,2\r\n"));
+            link.setAttribute("download", "Template_Database_Master.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
         function processCSVUploadDB(event) {
-            const file = event.target.files[0]; if (!file) return;
-            const reader = new FileReader();
+            const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
             reader.onload = function(e) {
                 const rows = e.target.result.split('\n');
                 if (rows.length < 2) { showToast("Error", "File kosong/tidak valid.", "error"); event.target.value = ''; return; }
@@ -1611,37 +1414,28 @@
                     if (previewData.length === 0) return showToast("Gagal", "Tidak ada data valid.", "error");
                     dbCsvImportPendingData = previewData; renderCSVPreviewTable();
                 }, 200);
-            };
-            reader.readAsText(file);
+            }; reader.readAsText(file);
         }
 
         function renderCSVPreviewTable() {
             document.getElementById('db-preview-count').innerText = dbCsvImportPendingData.length;
-            document.getElementById('db-preview-tbody').innerHTML = dbCsvImportPendingData.map(item => `
-                <tr class="hover:bg-blue-50/30"><td class="px-3 py-1.5 font-semibold text-gray-700">${item.lokasi||'-'}</td><td class="px-3 py-1.5">${item.model||'-'}</td><td class="px-3 py-1.5 font-bold text-blue-600">${item.pn||'-'}</td><td class="px-3 py-1.5 truncate max-w-[150px]">${item.description||'-'}</td><td class="px-3 py-1.5 text-center font-bold text-blue-500">${item.yp}</td><td class="px-3 py-1.5 text-center font-bold text-orange-500">${item.ys}</td></tr>
-            `).join('');
-            document.getElementById('db-preview-csv-section').classList.remove('hidden');
-            document.getElementById('db-manual-fields-container').classList.add('hidden'); document.getElementById('db-manual-divider').classList.add('hidden');
+            document.getElementById('db-preview-tbody').innerHTML = dbCsvImportPendingData.map(item => `<tr class="hover:bg-blue-50/30"><td class="px-3 py-1.5 font-semibold text-gray-700">${item.lokasi||'-'}</td><td class="px-3 py-1.5">${item.model||'-'}</td><td class="px-3 py-1.5 font-bold text-blue-600">${item.pn||'-'}</td><td class="px-3 py-1.5 truncate max-w-[150px]">${item.description||'-'}</td><td class="px-3 py-1.5 text-center font-bold text-blue-500">${item.yp}</td><td class="px-3 py-1.5 text-center font-bold text-orange-500">${item.ys}</td></tr>`).join('');
+            document.getElementById('db-preview-csv-section').classList.remove('hidden'); document.getElementById('db-manual-fields-container').classList.add('hidden'); document.getElementById('db-manual-divider').classList.add('hidden');
             document.getElementById('btn-save-db').innerText = "SIMPAN BATCH DATA CSV"; document.getElementById('btn-save-db').className = "flex-[2] py-3.5 bg-emerald-600 text-white rounded-xl font-black hover:bg-emerald-700 shadow-md transition-all text-sm";
         }
 
         function cancelCSVPreview() {
-            dbCsvImportPendingData = [];
-            document.getElementById('db-preview-csv-section').classList.add('hidden');
-            document.getElementById('db-manual-fields-container').classList.remove('hidden'); document.getElementById('db-manual-divider').classList.remove('hidden');
+            dbCsvImportPendingData = []; document.getElementById('db-preview-csv-section').classList.add('hidden'); document.getElementById('db-manual-fields-container').classList.remove('hidden'); document.getElementById('db-manual-divider').classList.remove('hidden');
             document.getElementById('btn-save-db').innerText = "SIMPAN DATABASE"; document.getElementById('btn-save-db').className = "flex-[2] py-3.5 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 shadow-md transition-all text-sm";
         }
 
         function downloadCSVTemplate() {
-            const link = document.createElement("a");
-            link.setAttribute("href", encodeURI("data:text/csv;charset=utf-8,PN,Lokasi,Tipe(IN/OUT),Qty_YP,Qty_YS,No_RO,ODF,Keterangan\r\nCONTOH-PN-123,Lokasi A,IN,50,0,RO-123,ODF-123,Kedatangan Barang\r\n"));
-            link.setAttribute("download", "Template_Import_Transaksi.csv");
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            const link = document.createElement("a"); link.setAttribute("href", encodeURI("data:text/csv;charset=utf-8,PN,Lokasi,Tipe(IN/OUT),Qty_YP,Qty_YS,No_RO,ODF,Keterangan\r\nCONTOH-PN-123,Lokasi A,IN,50,0,RO-123,ODF-123,Kedatangan Barang\r\n"));
+            link.setAttribute("download", "Template_Import_Transaksi.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
         function processCSVUpload(event) {
-            const file = event.target.files[0]; if (!file) return;
-            const reader = new FileReader();
+            const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
             reader.onload = function(e) {
                 const rows = e.target.result.split('\n');
                 if(rows.length < 2) { showToast("Error", "File kosong/tidak valid.", "error"); event.target.value = ''; return; }
@@ -1651,29 +1445,20 @@
                     for(let i = 1; i < rows.length; i++) {
                         const cols = rows[i].trim().split(','); if(cols.length < 8) continue; 
                         const [pn, lokasi, tipe, yp, ys, ro, odf, ket] = [cols[0].trim(), cols[1].trim(), cols[2].trim().toUpperCase()==='OUT'?'OUT':'IN', parseInt(cols[3])||0, parseInt(cols[4])||0, cols[5]?.trim(), cols[6]?.trim(), cols[7]?.trim()||'Kedatangan Barang'];
-                        const rowId = transRowCounter; addTransactionRow(); 
-                        
-                        document.getElementById(`pn-${rowId}`).value = pn; handleRowScanPN(rowId, pn); 
+                        const rowId = transRowCounter; addTransactionRow(); document.getElementById(`pn-${rowId}`).value = pn; handleRowScanPN(rowId, pn); 
                         setTimeout(() => {
-                            const lokSel = document.getElementById(`lokasi-${rowId}`);
-                            if(lokSel) { if(!Array.from(lokSel.options).some(o=>o.value===lokasi)&&lokasi) lokSel.innerHTML+=`<option value="${lokasi}">${lokasi}</option>`; lokSel.value=lokasi; }
+                            const lokSel = document.getElementById(`lokasi-${rowId}`); if(lokSel) { if(!Array.from(lokSel.options).some(o=>o.value===lokasi)&&lokasi) lokSel.innerHTML+=`<option value="${lokasi}">${lokasi}</option>`; lokSel.value=lokasi; }
                             const tSel = document.getElementById(`type-${rowId}`); if(tSel){tSel.value=tipe; updateRowTypeColor(rowId);}
-                            document.getElementById(`yp-${rowId}`).value = yp; document.getElementById(`ys-${rowId}`).value = ys;
-                            document.getElementById(`ro-${rowId}`).value = ro; document.getElementById(`odf-${rowId}`).value = odf;
-                            const kSel = document.getElementById(`ket-${rowId}`);
-                            if(kSel) { if(!Array.from(kSel.options).some(o=>o.value===ket)&&ket) kSel.innerHTML+=`<option value="${ket}">${ket}</option>`; kSel.value=ket; }
+                            document.getElementById(`yp-${rowId}`).value = yp; document.getElementById(`ys-${rowId}`).value = ys; document.getElementById(`ro-${rowId}`).value = ro; document.getElementById(`odf-${rowId}`).value = odf;
+                            const kSel = document.getElementById(`ket-${rowId}`); if(kSel) { if(!Array.from(kSel.options).some(o=>o.value===ket)&&ket) kSel.innerHTML+=`<option value="${ket}">${ket}</option>`; kSel.value=ket; }
                             updateRowStockInfo(rowId); validateRowStock(rowId);
                         }, 80);
                         importedCount++;
                     }
                     event.target.value = ''; showLoading(false);
-                    if(importedCount > 0) {
-                        showToast("Import Selesai", `${importedCount} baris dimuat.`, "success");
-                        if(transRows.length > importedCount) { const fId = transRows[0]; if(!document.getElementById(`pn-${fId}`).value && parseInt(document.getElementById(`yp-${fId}`).value)===0) removeTransactionRow(fId); }
-                    } else showToast("Gagal", "Tidak ada baris valid.", "error");
+                    if(importedCount > 0) { showToast("Import Selesai", `${importedCount} baris dimuat.`, "success"); if(transRows.length > importedCount) { const fId = transRows[0]; if(!document.getElementById(`pn-${fId}`).value && parseInt(document.getElementById(`yp-${fId}`).value)===0) removeTransactionRow(fId); } } else showToast("Gagal", "Tidak ada baris valid.", "error");
                 }, 300); 
-            };
-            reader.readAsText(file);
+            }; reader.readAsText(file);
         }
 
         function addTransactionRow() {
@@ -1685,8 +1470,7 @@
                 <div class="col-span-1 flex items-center justify-between md:justify-center md:pt-3 pb-3 md:pb-0 border-b border-gray-50 md:border-none mb-3 md:mb-0"><span class="md:hidden text-sm font-black text-indigo-500">Baris #${transRows.length}</span><span class="hidden md:inline text-xs font-black text-gray-300 text-center">${transRows.length}</span></div>
                 <div class="col-span-3 space-y-1 mb-3 md:mb-0">
                     <label class="md:hidden text-[11px] font-bold text-gray-400 uppercase">Part Number (PN)</label>
-                    <input type="text" id="pn-${rowId}" list="dl-pn-${rowId}" oninput="handleRowScanPN(${rowId}, this.value)" class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-blue-600 text-xs sm:text-sm uppercase" placeholder="Ketik / Scan PN...">
-                    <datalist id="dl-pn-${rowId}"></datalist>
+                    <input type="text" id="pn-${rowId}" list="dl-pn-${rowId}" oninput="handleRowScanPN(${rowId}, this.value)" class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-blue-600 text-xs sm:text-sm uppercase" placeholder="Ketik / Scan PN..."><datalist id="dl-pn-${rowId}"></datalist>
                     <div id="info-${rowId}" class="text-[10px] text-gray-400 font-medium pl-1 leading-relaxed break-words mt-1">Masukkan PN untuk memuat rincian stok...</div>
                     <input type="hidden" id="real-pn-${rowId}"><input type="hidden" id="model-${rowId}"><input type="hidden" id="material-${rowId}"><input type="hidden" id="picker-${rowId}" value="${currentUser?currentUser.fullName:'Guest'}">
                 </div>
@@ -1694,8 +1478,8 @@
                     <div><label class="md:hidden text-[11px] font-bold text-gray-400 uppercase">Lokasi</label><select id="lokasi-${rowId}" onchange="updateRowStockInfo(${rowId}); validateRowStock(${rowId});" class="w-full px-2 py-2.5 rounded-xl bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none text-[10px] sm:text-xs font-bold cursor-pointer text-gray-700 h-[38px] md:h-auto"><option value="" disabled selected>Pilih...</option></select></div>
                     <div><label class="md:hidden text-[11px] font-bold text-gray-400 uppercase">Tipe</label><select id="type-${rowId}" onchange="updateRowTypeColor(${rowId}); validateRowStock(${rowId});" class="w-full px-2 py-2.5 rounded-xl bg-emerald-50 text-emerald-700 border-none ring-1 ring-emerald-200 outline-none text-[11px] sm:text-xs font-black cursor-pointer h-[38px] md:h-auto"><option value="IN" selected>IN</option><option value="OUT">OUT</option></select></div>
                 </div>
-                <div class="col-span-1 mb-3 md:mb-0"><label class="md:hidden text-[11px] font-bold text-gray-400 uppercase">Qty YP</label><input type="number" id="yp-${rowId}" oninput="validateRowStock(${rowId}, 'yp')" value="0" min="0" class="w-full px-3 py-2.5 rounded-xl bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none font-extrabold text-xs sm:text-sm text-blue-600 text-center"></div>
-                <div class="col-span-1 mb-3 md:mb-0"><label class="md:hidden text-[11px] font-bold text-gray-400 uppercase">Qty YS</label><input type="number" id="ys-${rowId}" oninput="validateRowStock(${rowId}, 'ys')" value="0" min="0" class="w-full px-3 py-2.5 rounded-xl bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none font-extrabold text-xs sm:text-sm text-orange-600 text-center"></div>
+                <div class="col-span-1 mb-3 md:mb-0"><label class="md:hidden text-[11px] font-bold text-gray-400 uppercase">Qty YP</label><input type="number" id="yp-${rowId}" oninput="validateRowStock(${rowId})" value="0" min="0" class="w-full px-3 py-2.5 rounded-xl bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none font-extrabold text-xs sm:text-sm text-blue-600 text-center"></div>
+                <div class="col-span-1 mb-3 md:mb-0"><label class="md:hidden text-[11px] font-bold text-gray-400 uppercase">Qty YS</label><input type="number" id="ys-${rowId}" oninput="validateRowStock(${rowId})" value="0" min="0" class="w-full px-3 py-2.5 rounded-xl bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none font-extrabold text-xs sm:text-sm text-orange-600 text-center"></div>
                 <div class="col-span-2 grid grid-cols-2 gap-3 mb-3 md:mb-0">
                     <div><label class="md:hidden text-[11px] font-bold text-gray-400 uppercase">No. RO</label><input type="text" id="ro-${rowId}" class="w-full px-2 py-2.5 rounded-xl bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none text-[11px] sm:text-xs font-semibold text-gray-700" placeholder="RO..."></div>
                     <div><label class="md:hidden text-[11px] font-bold text-gray-400 uppercase">ODF</label><input type="text" id="odf-${rowId}" class="w-full px-2 py-2.5 rounded-xl bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none text-[11px] sm:text-xs font-semibold text-gray-700" placeholder="ODF..."></div>
@@ -1710,8 +1494,7 @@
 
         function removeTransactionRow(rowId) {
             if (transRows.length <= 1) return showToast("Batal", "Minimal 1 baris!", "error");
-            document.getElementById(`tr-row-${rowId}`)?.remove();
-            transRows = transRows.filter(id => id !== rowId); updateRowNumbers();
+            document.getElementById(`tr-row-${rowId}`)?.remove(); transRows = transRows.filter(id => id !== rowId); updateRowNumbers();
         }
 
         function updateRowNumbers() {
@@ -1728,7 +1511,6 @@
             s.className = `w-full px-2 py-2.5 rounded-xl outline-none text-[11px] sm:text-xs font-black cursor-pointer h-[38px] md:h-auto border-none ring-1 ${s.value==='IN'?'bg-emerald-50 text-emerald-700 ring-emerald-200':'bg-rose-50 text-rose-700 ring-rose-200'}`;
         }
 
-        // --- UPDATE PENTING: MENGGUNAKAN STOK TERSEDIA (AVAILABLE_YP & AVAILABLE_YS) ---
         function updateRowStockInfo(rowId) {
             const infoDiv = document.getElementById(`info-${rowId}`), pnInput = document.getElementById(`pn-${rowId}`), lokSel = document.getElementById(`lokasi-${rowId}`), modInput = document.getElementById(`model-${rowId}`), matInput = document.getElementById(`material-${rowId}`);
             if (!infoDiv || !pnInput || !lokSel) return;
@@ -1743,24 +1525,14 @@
             const rPn = document.getElementById(`real-pn-${rowId}`); if(rPn) rPn.value = selMatch.pn;
             modInput.value = selMatch.model || "-"; matInput.value = selMatch.description || "-";
             
-            // Kalkulasi Berdasarkan Sisa (Master - Pending)
             const locYP = selMatch && lok && String(selMatch.lokasi).trim().toLowerCase() === String(lok).trim().toLowerCase() ? (selMatch.available_yp !== undefined ? selMatch.available_yp : (parseInt(selMatch.yp) || 0)) : 0;
             const locYS = selMatch && lok && String(selMatch.lokasi).trim().toLowerCase() === String(lok).trim().toLowerCase() ? (selMatch.available_ys !== undefined ? selMatch.available_ys : (parseInt(selMatch.ys) || 0)) : 0;
-            const totalYP = matches.reduce((sum, m) => sum + (m.available_yp !== undefined ? m.available_yp : (parseInt(m.yp) || 0)), 0);
-            const totalYS = matches.reduce((sum, m) => sum + (m.available_ys !== undefined ? m.available_ys : (parseInt(m.ys) || 0)), 0);
             
-            infoDiv.innerHTML = `
-                <div class="text-blue-600 font-bold truncate max-w-[250px] text-[10px]" title="${selMatch.model} - ${selMatch.description}">[${selMatch.model}] ${selMatch.description}</div>
-                <div class="text-[10px] text-gray-700 font-bold mt-1 bg-gray-50 p-1.5 rounded-lg border border-gray-100">
-                    Tersedia: <span class="text-emerald-600">${lok ? `YP: ${locYP} | YS: ${locYS}` : `Pilih lokasi`}</span>
-                </div>
-            `;
+            infoDiv.innerHTML = `<div class="text-blue-600 font-bold truncate max-w-[250px] text-[10px]" title="${selMatch.model} - ${selMatch.description}">[${selMatch.model}] ${selMatch.description}</div><div class="text-[10px] text-gray-700 font-bold mt-1 bg-gray-50 p-1.5 rounded-lg border border-gray-100">Tersedia: <span class="text-emerald-600">${lok ? `YP: ${locYP} | YS: ${locYS}` : `Pilih lokasi`}</span></div>`;
         }
 
-        // --- UPDATE PENTING: VALIDASI MEMPERTIMBANGKAN SISA STOK & INPUT BATCH SEBELUMNYA ---
-        function validateRowStock(rowId, fieldChanged) {
-            const type = document.getElementById(`type-${rowId}`);
-            if (!type || type.value !== 'OUT') return;
+        function validateRowStock(rowId) {
+            const type = document.getElementById(`type-${rowId}`); if (!type || type.value !== 'OUT') return;
             const pnIn = document.getElementById(`pn-${rowId}`), lokSel = document.getElementById(`lokasi-${rowId}`), ypIn = document.getElementById(`yp-${rowId}`), ysIn = document.getElementById(`ys-${rowId}`);
             if (!pnIn || !lokSel || !ypIn || !ysIn) return;
             
@@ -1768,27 +1540,18 @@
             if (!pnVal || !lokVal) return;
             
             const match = autocompleteCache.find(x => String(x.lokasi).trim().toLowerCase() === lokVal.trim().toLowerCase() && isRowMatch(x, pnVal));
-
-            // Hitung penggunaan stok di baris lain dalam 1 form ini
             let currentBatchYP = 0, currentBatchYS = 0;
             for (let i = 0; i < transRows.length; i++) {
-                const otherId = transRows[i];
-                if (otherId === rowId) continue;
-                if (document.getElementById(`type-${otherId}`)?.value !== 'OUT') continue;
-
-                const oPn = document.getElementById(`pn-${otherId}`)?.value.trim();
-                const oLok = document.getElementById(`lokasi-${otherId}`)?.value;
+                const otherId = transRows[i]; if (otherId === rowId || document.getElementById(`type-${otherId}`)?.value !== 'OUT') continue;
+                const oPn = document.getElementById(`pn-${otherId}`)?.value.trim(), oLok = document.getElementById(`lokasi-${otherId}`)?.value;
                 if (oPn && oLok && oPn.toLowerCase() === pnVal.toLowerCase() && oLok.toLowerCase() === lokVal.toLowerCase()) {
-                    currentBatchYP += parseInt(document.getElementById(`yp-${otherId}`)?.value) || 0;
-                    currentBatchYS += parseInt(document.getElementById(`ys-${otherId}`)?.value) || 0;
+                    currentBatchYP += parseInt(document.getElementById(`yp-${otherId}`)?.value) || 0; currentBatchYS += parseInt(document.getElementById(`ys-${otherId}`)?.value) || 0;
                 }
             }
 
             const baseAvailableYP = match && match.available_yp !== undefined ? match.available_yp : (match ? parseInt(match.yp)||0 : 0);
             const baseAvailableYS = match && match.available_ys !== undefined ? match.available_ys : (match ? parseInt(match.ys)||0 : 0);
-
-            const maxYP = Math.max(0, baseAvailableYP - currentBatchYP);
-            const maxYS = Math.max(0, baseAvailableYS - currentBatchYS);
+            const maxYP = Math.max(0, baseAvailableYP - currentBatchYP), maxYS = Math.max(0, baseAvailableYS - currentBatchYS);
 
             if (ypVal > maxYP) { showToast("Melebihi Stok", `Tersedia ${maxYP} YP di Lokasi "${lokVal}" (dikurangi Pending).`, "error"); ypIn.value = maxYP; }
             if (ysVal > maxYS) { showToast("Melebihi Stok", `Tersedia ${maxYS} YS di Lokasi "${lokVal}" (dikurangi Pending).`, "error"); ysIn.value = maxYS; }
@@ -1815,11 +1578,9 @@
 
         function resetBatchTransForm() { document.getElementById('trans-items-list').innerHTML = ""; transRows = []; transRowCounter = 0; addTransactionRow(); }
 
-        // --- UPDATE PENTING: VALIDASI AKUMULATIF SAAT SUBMIT BATCH ---
         function submitBatchTrans() {
             if (getRoleUpper() === 'GUEST') return;
-            const itemsToSave = []; let validationError = null;
-            const batchUsageYP = {}, batchUsageYS = {};
+            const itemsToSave = []; let validationError = null; const batchUsageYP = {}, batchUsageYS = {};
 
             for (let i = 0; i < transRows.length; i++) {
                 const rowId = transRows[i], inPn = document.getElementById(`pn-${rowId}`).value.trim(), rPn = document.getElementById(`real-pn-${rowId}`)?.value.trim();
@@ -1850,8 +1611,7 @@
             .then(res => { if(!res.ok) return res.json().then(e => { throw new Error(e.message||'Gagal') }); return res.json(); })
             .then(() => {
                 btn.disabled = false; btn.innerText = oriTxt; showToast("Sukses", `${itemsToSave.length} Transaksi diproses!`, "success"); resetBatchTransForm();
-                fetchDatabase(dbCurrentPage); fetchHistory(1); fetchPending(1); loadChartOptimized();
-                refreshAutocomplete(() => showLoading(false));
+                fetchDatabase(dbCurrentPage); fetchHistory(1); fetchPending(1); loadChartOptimized(); refreshAutocomplete(() => showLoading(false));
             }).catch(e => { btn.disabled = false; btn.innerText = oriTxt; showLoading(false); showToast("Gagal Menyimpan", e.message, "error"); });
         }
 
@@ -1867,13 +1627,10 @@
         function shortenMaterialName(name) { if(!name||name==='-') return '-'; const words=name.trim().split(/\s+/); return words.length>2?words.slice(0,2).join(' ')+'...':name; }
 
         function showDrilldown(ket) {
-            showLoading(true, `Membuka Detail...`);
-            document.getElementById('chart-card-title').innerText = `DETAIL KATEGORI: ${ket}`; document.getElementById('btn-back-to-doughnut').classList.remove('hidden'); document.getElementById('doughnut-chart-container').classList.add('hidden'); document.getElementById('drilldown-chart-container').classList.remove('hidden');
+            showLoading(true, `Membuka Detail...`); document.getElementById('chart-card-title').innerText = `DETAIL KATEGORI: ${ket}`; document.getElementById('btn-back-to-doughnut').classList.remove('hidden'); document.getElementById('doughnut-chart-container').classList.add('hidden'); document.getElementById('drilldown-chart-container').classList.remove('hidden');
             fetch(`/api/drilldown?keterangan=${encodeURIComponent(ket)}`).then(r=>r.json()).then(res => {
                 showLoading(false);
-                document.getElementById('drilldown-list-body').innerHTML = res.recentLogs.length===0?`<tr><td colspan="4" class="px-4 py-6 text-center text-gray-400 italic">Tidak ada.</td></tr>`:res.recentLogs.map(item => `
-                    <tr class="hover:bg-gray-50 border-b border-gray-100"><td class="px-4 py-2 text-gray-400 font-medium whitespace-nowrap">${item.waktu?item.waktu.split(' ')[0]:'-'}</td><td class="px-4 py-2 font-bold text-gray-700"><div class="truncate max-w-[140px]">${item.material}</div><div class="text-[10px] text-gray-400 font-medium truncate max-w-[140px]">${item.pn}</div></td><td class="px-4 py-2 text-center font-extrabold text-blue-500">${item.yp||0}</td><td class="px-4 py-2 text-center font-extrabold text-orange-500">${item.ys||0}</td></tr>
-                `).join('');
+                document.getElementById('drilldown-list-body').innerHTML = res.recentLogs.length===0?`<tr><td colspan="4" class="px-4 py-6 text-center text-gray-400 italic">Tidak ada.</td></tr>`:res.recentLogs.map(item => `<tr class="hover:bg-gray-50 border-b border-gray-100"><td class="px-4 py-2 text-gray-400 font-medium whitespace-nowrap">${item.waktu?item.waktu.split(' ')[0]:'-'}</td><td class="px-4 py-2 font-bold text-gray-700"><div class="truncate max-w-[140px]">${item.material}</div><div class="text-[10px] text-gray-400 font-medium truncate max-w-[140px]">${item.pn}</div></td><td class="px-4 py-2 text-center font-extrabold text-blue-500">${item.yp||0}</td><td class="px-4 py-2 text-center font-extrabold text-orange-500">${item.ys||0}</td></tr>`).join('');
                 const mats = Object.keys(res.materialGroups).sort((a,b)=>(res.materialGroups[b].yp+res.materialGroups[b].ys)-(res.materialGroups[a].yp+res.materialGroups[a].ys)).slice(0,8);
                 const ctx = document.getElementById('drilldownBarChart').getContext('2d'); if(drilldownBarChart) drilldownBarChart.destroy();
                 drilldownBarChart = new Chart(ctx, { type: 'bar', data: { labels: mats.map(m=>shortenMaterialName(m)), datasets: [{ label: 'YP Qty', data: mats.map(m=>res.materialGroups[m].yp), backgroundColor: '#3b82f6', borderRadius: 4 }, { label: 'YS Qty', data: mats.map(m=>res.materialGroups[m].ys), backgroundColor: '#f59e0b', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }, y: { stacked: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } } }, plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 6, font: { size: 10 } } }, tooltip: { callbacks: { title: ctx => mats[ctx[0].dataIndex] } } } } });
@@ -1951,15 +1708,61 @@
             }).catch(e => { b.disabled = false; b.innerText = o; showLoading(false); closeConfirmModal(); showToast("Gagal", e.message, "error"); });
         }
 
-        function approvePendingItem(r) { if(getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return; pendingApproveRow=r; document.getElementById('approve-modal').classList.remove('hidden'); }
-        function closeApproveModal() { document.getElementById('approve-modal').classList.add('hidden'); pendingApproveRow=null; }
+        // --- FUNGSI APPROVE PENDING (DIPERBAIKI SECARA PENUH) ---
+        function approvePendingItem(rowNum) {
+            if(getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return;
+            pendingApproveRow = rowNum;
+            document.getElementById('approve-modal').classList.remove('hidden');
+        }
+        
+        function closeApproveModal() { 
+            document.getElementById('approve-modal').classList.add('hidden'); 
+            pendingApproveRow = null; 
+        }
 
         function executeApprove() {
-            if(!pendingApproveRow) return; const b=document.getElementById('confirm-approve-btn'), o=b.innerText; b.disabled=true; b.innerText="Proses..."; showLoading(true, "Approve...");
-            fetch(`/api/pending/approve/${pendingApproveRow}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ approvedBy:currentUser?.fullName||'Admin' }) })
-            .then(r => { if(!r.ok) return r.json().then(e=>{throw new Error(e.message||'Gagal')}); return r.json(); })
-            .then(() => { b.disabled=false; b.innerText=o; closeApproveModal(); showToast("Sukses", "Diapprove.", "success"); fetchDatabase(dbCurrentPage); fetchHistory(1); fetchPending(pendingCurrentPage, ()=>refreshAutocomplete(()=>showLoading(false))); loadChartOptimized(); })
-            .catch(e => { b.disabled=false; b.innerText=o; showLoading(false); closeApproveModal(); showToast("Gagal", e.message, "error"); });
+            if(!pendingApproveRow) {
+                showToast("Error", "ID Baris tidak ditemukan", "error");
+                return;
+            }
+            
+            const btn = document.getElementById('confirm-approve-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Proses...";
+            showLoading(true, "Mengapprove Transaksi...");
+
+            const payload = { approvedBy: currentUser ? currentUser.fullName : 'Admin' };
+
+            fetch(`/api/pending/approve/${pendingApproveRow}`, { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (!res.ok) return res.json().then(errData => { throw new Error(errData.message || 'Gagal approve transaksi'); });
+                return res.json();
+            })
+            .then(data => {
+                btn.disabled = false;
+                btn.innerText = originalText;
+                closeApproveModal();
+                showToast("Sukses", "Transaksi berhasil diapprove.", "success");
+                
+                fetchDatabase(dbCurrentPage);
+                fetchHistory(1);
+                fetchPending(pendingCurrentPage, () => {
+                    refreshAutocomplete(() => showLoading(false));
+                });
+                loadChartOptimized();
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerText = originalText;
+                showLoading(false);
+                closeApproveModal();
+                showToast("Gagal Approve", err.message, "error");
+            });
         }
 
         function renderDB(data) {
@@ -1994,69 +1797,32 @@
             renderedPendingData = data; const tbody = document.getElementById('pending-body');
             tbody.innerHTML = data.map((item, index) => `
                 <tr class="hover:bg-orange-50/50 transition-colors group border-l-4 border-l-orange-400 cursor-pointer" onclick="showDetailTrans(event, 'pending', ${index})">
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-700">${item.lokasi || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[110px] truncate" title="${item.model}">${item.model || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-blue-600">${item.pn || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[130px] truncate" title="${item.material}">${item.material || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-400 font-medium whitespace-nowrap text-[11px]">${item.waktu || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-600 font-medium">${item.odf || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-blue-500">${item.yp || 0}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-orange-500">${item.ys || 0}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-black tracking-wider bg-orange-100 text-orange-700">${item.type}</span></td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-600 max-w-[110px] truncate" title="${item.keterangan}">${item.keterangan || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 font-medium">${item.noRo || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-700 font-bold text-[11px] max-w-[90px] truncate" title="${item.picker || '-'}">${item.picker || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-black tracking-wider bg-orange-50 text-orange-600 border border-orange-100">PROSES</span></td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-center class-aksi-pending-col"><div class="flex items-center justify-center gap-2"><button onclick="event.stopPropagation(); approvePendingItem('${item.rowNum}')" class="text-emerald-600 hover:bg-emerald-50 p-2 rounded-lg transition-colors" title="Approve"><i class="fa-solid fa-circle-check text-sm"></i></button><button onclick="event.stopPropagation(); rejectPendingItem('${item.rowNum}')" class="text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition-colors" title="Batal / Tolak"><i class="fa-solid fa-circle-xmark text-sm"></i></button></div></td>
+                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-700 pl-4">${item.lokasi || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[110px] truncate" title="${item.model}">${item.model || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-blue-600">${item.pn || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[130px] truncate" title="${item.material}">${item.material || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-400 font-medium whitespace-nowrap text-[11px]">${item.waktu || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-600 font-medium">${item.odf || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-blue-500">${item.yp || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-orange-500">${item.ys || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-black tracking-wider bg-rose-100 text-rose-700">${item.type}</span></td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-600 max-w-[110px] truncate" title="${item.keterangan}">${item.keterangan || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 font-medium">${item.noRo || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-700 font-bold text-[11px] max-w-[90px] truncate" title="${item.picker || '-'}">${item.picker || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-bold bg-orange-100 text-orange-700"><i class="fa-solid fa-clock text-[10px]"></i> Pending</span></td>
+                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-center class-aksi-pending-col"><div class="flex items-center justify-center gap-2"><button onclick="event.stopPropagation(); approvePendingItem('${item.rowNum}')" class="text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition-colors font-bold text-[10px] tracking-wide shadow-sm"><i class="fa-solid fa-check mr-1"></i> OK</button><button onclick="event.stopPropagation(); rejectPendingItem('${item.rowNum}')" class="text-rose-500 hover:bg-rose-100 p-1.5 rounded-lg transition-colors"><i class="fa-solid fa-xmark text-sm"></i></button></div></td>
                 </tr>
             `).join('');
-            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="14" class="text-center py-6 text-gray-400 font-bold">Tidak ada transaksi pending</td></tr>`;
+            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="14" class="text-center py-6 text-gray-400 font-bold">Tidak ada transaksi pending (OUT)</td></tr>`;
         }
 
         function renderBackupHistory(data) {
             renderedBackupData = data; const tbody = document.getElementById('backup-body');
             tbody.innerHTML = data.map((item, index) => `
                 <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="showDetailTrans(event, 'backup', ${index})">
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-700">${item.lokasi || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[110px] truncate" title="${item.model}">${item.model || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-blue-600">${item.pn || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[150px] truncate" title="${item.material}">${item.material || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-400 font-medium whitespace-nowrap text-[11px]">${item.waktu || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-600 font-medium">${item.odf || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-blue-500">${item.yp || 0}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-orange-500">${item.ys || 0}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-black tracking-wider ${item.type === 'IN' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${item.type}</span></td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-600 max-w-[110px] truncate" title="${item.keterangan}">${item.keterangan || '-'}</td>
-                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 font-medium">${item.noRo || '-'}</td>
+                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-700">${item.lokasi || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[110px] truncate" title="${item.model}">${item.model || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-gray-600">${item.pn || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[130px] truncate" title="${item.material}">${item.material || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-400 font-medium whitespace-nowrap text-[11px]">${item.waktu || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-600 font-medium">${item.odf || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-gray-600">${item.yp || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-gray-600">${item.ys || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-bold ${item.type === 'IN' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}">${item.type}</span></td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-600 max-w-[110px] truncate" title="${item.keterangan}">${item.keterangan || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 font-medium">${item.noRo || '-'}</td>
                 </tr>
             `).join('');
-            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-gray-400 font-bold">Tidak ada data arsip backup</td></tr>`;
+            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-gray-400 font-bold">Tidak ada data backup</td></tr>`;
         }
 
         function exportBackupToCSV() {
-            showLoading(true, "Mengekspor Backup...");
-            fetch(`/api/backup?search=${encodeURIComponent(backupSearchQuery)}&page=1&pageSize=5000`)
-                .then(res => res.json())
-                .then(res => {
-                    showLoading(false);
-                    const items = res.data || [];
-                    if (items.length === 0) return showToast("Gagal", "Tidak ada data untuk diekspor", "error");
-                    
-                    let csvContent = "data:text/csv;charset=utf-8,Lokasi,Model,Part Number (PN),Material / Deskripsi,Waktu,ODF,YP,YS,IN/OUT,Keterangan,No RO\r\n";
-                    items.forEach(i => {
-                        csvContent += [`"${i.lokasi||''}"`, `"${i.model||''}"`, `"${i.pn||''}"`, `"${i.material||''}"`, `"${i.waktu||''}"`, `"${i.odf||''}"`, i.yp||0, i.ys||0, `"${i.type||''}"`, `"${i.keterangan||''}"`, `"${i.noRo||''}"`].join(",") + "\r\n";
-                    });
-                    
-                    const encodedUri = encodeURI(csvContent);
-                    const link = document.createElement("a");
-                    link.setAttribute("href", encodedUri);
-                    link.setAttribute("download", `Backup_History_2025_2026_${new Date().toISOString().slice(0,10)}.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    showToast("Sukses", "Arsip berhasil diunduh.", "success");
-                })
-                .catch(err => { showLoading(false); showToast("Gagal", "Terjadi kesalahan saat mengekspor data.", "error"); });
+            if (getRoleUpper() === 'GUEST') return; showLoading(true, "Mempersiapkan File CSV...");
+            fetch(`/api/backup?search=${encodeURIComponent(backupSearchQuery)}&page=1&pageSize=999999`).then(r => r.json()).then(res => {
+                if (!res.data || res.data.length === 0) { showLoading(false); return showToast("Export Gagal", "Tidak ada data.", "error"); }
+                let csvContent = "data:text/csv;charset=utf-8,Lokasi,Model,PN,Material,Waktu,ODF,YP,YS,Type,Keterangan,No RO\r\n";
+                res.data.forEach(item => { csvContent += [`\"${item.lokasi||''}\"`,`\"${item.model||''}\"`,`\"${item.pn||''}\"`,`\"${item.material||''}\"`,`\"${item.waktu||''}\"`,`\"${item.odf||''}\"`,item.yp||0,item.ys||0,`\"${item.type||''}\"`,`\"${item.keterangan||''}\"`,`\"${item.noRo||''}\"`].join(",") + "\r\n"; });
+                const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", `Backup_History_SC_${new Date().toISOString().slice(0, 10)}.csv`);
+                document.body.appendChild(link); link.click(); document.body.removeChild(link); showLoading(false); showToast("Sukses", "File CSV berhasil diunduh.", "success");
+            }).catch(() => { showLoading(false); showToast("Export Gagal", "Terjadi kesalahan.", "error"); });
         }
     </script>
 </body>
