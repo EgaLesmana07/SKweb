@@ -161,13 +161,14 @@ app.get('/api/users', async (req, res) => {
 // --- API AUTOCOMPLETE & DATABASE MASTER ---
 // ==========================================
 
-// API AUTOCOMPLETE (Mengambil Seluruh Data Master dengan Pembatasan Range Supabase)
+// API AUTOCOMPLETE (Mengambil Master Data dan Kalkulasi Pending)
 app.get('/api/autocomplete', async (req, res) => {
   let allData = [];
   let pageNum = 0;
   const limitVal = 1000;
 
   try {
+    // 1. Ambil seluruh data master
     while (true) {
       const { data: chunk, error } = await supabase
         .from('data_master')
@@ -181,13 +182,44 @@ app.get('/api/autocomplete', async (req, res) => {
       if (chunk.length < limitVal) break;
       pageNum++;
     }
-    res.json(allData);
+
+    // 2. Ambil data pending untuk menghitung stok yang sedang tertahan (reserved)
+    const { data: pendingData, error: pendingError } = await supabase
+        .from('data_sc_pending')
+        .select('pn, lokasi, yp, ys');
+    
+    if (pendingError) throw pendingError;
+
+    const pendingMap = {};
+    if (pendingData) {
+        pendingData.forEach(p => {
+            const key = `${p.pn}_${p.lokasi}`;
+            if (!pendingMap[key]) pendingMap[key] = { yp: 0, ys: 0 };
+            pendingMap[key].yp += (parseInt(p.yp) || 0);
+            pendingMap[key].ys += (parseInt(p.ys) || 0);
+        });
+    }
+
+    // 3. Kalkulasikan ketersediaan stok (available_yp & available_ys)
+    const result = allData.map(item => {
+        const key = `${item.pn}_${item.lokasi}`;
+        const p = pendingMap[key] || { yp: 0, ys: 0 };
+        return {
+            ...item,
+            pending_yp: p.yp,
+            pending_ys: p.ys,
+            available_yp: Math.max(0, (parseInt(item.yp) || 0) - p.yp),
+            available_ys: Math.max(0, (parseInt(item.ys) || 0) - p.ys)
+        };
+    });
+
+    res.json(result);
   } catch (err) {
     res.status(500).json({ success: false, message: 'Gagal mengambil data autocomplete', error: err.message });
   }
 });
 
-// API READ DATABASE MASTER (Dengan Fitur Pencarian & Pagination)
+// API READ DATABASE MASTER
 app.get('/api/database', async (req, res) => {
   const search = req.query.search ? req.query.search.toLowerCase() : "";
   const page = parseInt(req.query.page) || 1;
@@ -207,7 +239,7 @@ app.get('/api/database', async (req, res) => {
 
     if (error) throw error;
 
-    // Menghitung Jumlah Model Unik secara keseluruhan
+    // Menghitung Jumlah Model Unik
     let allModels = [];
     let pageNum = 0;
     const limitVal = 1000;
@@ -240,7 +272,7 @@ app.get('/api/database', async (req, res) => {
   }
 });
 
-// API BATCH IMPORT DATABASE MASTER DARI FILE CSV
+// API BATCH IMPORT DATABASE MASTER
 app.post('/api/database/batch', async (req, res) => {
   const { items } = req.body;
   if (!items || items.length === 0) {
@@ -263,7 +295,6 @@ app.post('/api/database/batch', async (req, res) => {
 
       if (!pn) continue;
 
-      // Memeriksa keberadaan data lama di Supabase dengan kombinasi PN dan Lokasi
       const { data: existingItem, error: checkError } = await supabase
         .from('data_master')
         .select('id, yp, ys')
@@ -299,7 +330,6 @@ app.post('/api/database/batch', async (req, res) => {
       }
     }
 
-    // Melakukan Insert massal jika ada records baru
     if (recordsToInsert.length > 0) {
       const { error: insertError } = await supabase
         .from('data_master')
@@ -308,7 +338,6 @@ app.post('/api/database/batch', async (req, res) => {
       if (insertError) throw insertError;
     }
 
-    // Memperbarui records yang sudah ada secara sekuensial
     if (recordsToUpdate.length > 0) {
       for (const record of recordsToUpdate) {
         const { error: updateError } = await supabase
@@ -336,12 +365,11 @@ app.post('/api/database/batch', async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Batch Database Master Error:", error);
     res.status(500).json({ success: false, message: 'Gagal mengimpor database master', error: error.message });
   }
 });
 
-// API TAMBAH DATA DATABASE MASTER SECARA MANUAL
+// API TAMBAH DATA DATABASE MASTER
 app.post('/api/database', async (req, res) => {
   const { lokasi, model, pn, pn1, description, yp, ys } = req.body;
   const ypVal = parseInt(yp) || 0;
@@ -420,16 +448,8 @@ app.get('/api/history', async (req, res) => {
 
     if (error) throw error;
 
-    // Mengambil jumlah total barang masuk (IN) dan keluar (OUT)
-    const { count: totalIn } = await supabase
-      .from('data_history_sc')
-      .select('*', { count: 'exact', head: true })
-      .eq('in_out', 'IN');
-
-    const { count: totalOut } = await supabase
-      .from('data_history_sc')
-      .select('*', { count: 'exact', head: true })
-      .eq('in_out', 'OUT');
+    const { count: totalIn } = await supabase.from('data_history_sc').select('*', { count: 'exact', head: true }).eq('in_out', 'IN');
+    const { count: totalOut } = await supabase.from('data_history_sc').select('*', { count: 'exact', head: true }).eq('in_out', 'OUT');
 
     const formattedData = data.map(d => ({ 
       ...d, 
@@ -456,7 +476,6 @@ app.get('/api/history', async (req, res) => {
 // API EDIT LOG TRANSAKSI HISTORY
 app.put('/api/history/:rowNum', async (req, res) => {
   const { lokasi, model, pn, material, waktu, odf, yp, ys, type, keterangan, noRo, picker, approval } = req.body;
-  
   try {
     const { error } = await supabase
       .from('data_history_sc')
@@ -478,35 +497,19 @@ app.delete('/api/history/:rowNum', async (req, res) => {
   const rowNum = req.params.rowNum;
 
   try {
-    // Ambil detail log history yang akan dihapus
-    const { data: item, error: errItem } = await supabase
-      .from('data_history_sc')
-      .select('*')
-      .eq('id', rowNum)
-      .single();
-
+    const { data: item, error: errItem } = await supabase.from('data_history_sc').select('*').eq('id', rowNum).single();
     if (errItem || !item) return res.status(504).json({ success: false, message: 'Data history tidak ditemukan' });
 
-    // Jika IN dibatalkan maka stok berkurang, jika OUT dibatalkan maka stok bertambah
     const multiplier = (item.in_out === 'IN') ? -1 : 1;
     const ypChange = (Number(item.yp) || 0) * multiplier;
     const ysChange = (Number(item.ys) || 0) * multiplier;
 
-    // Ambil data master untuk disinkronisasi kembali
-    const { data: mRow } = await supabase
-      .from('data_master')
-      .select('id, yp, ys')
-      .eq('pn', item.pn)
-      .eq('lokasi', item.lokasi)
-      .maybeSingle();
+    const { data: mRow } = await supabase.from('data_master').select('id, yp, ys').eq('pn', item.pn).eq('lokasi', item.lokasi).maybeSingle();
 
     if (mRow) {
       const newYP = Math.max(0, Number(mRow.yp) + ypChange);
       const newYS = Math.max(0, Number(mRow.ys) + ysChange);
-      await supabase
-        .from('data_master')
-        .update({ yp: newYP, ys: newYS, total: newYP + newYS })
-        .eq('id', mRow.id);
+      await supabase.from('data_master').update({ yp: newYP, ys: newYS, total: newYP + newYS }).eq('id', mRow.id);
     }
 
     const { error: deleteError } = await supabase.from('data_history_sc').delete().eq('id', rowNum);
@@ -559,11 +562,7 @@ app.get('/api/pending', async (req, res) => {
 // API CANCEL / DELETE PENDING TRANSACTION
 app.delete('/api/pending/:rowNum', async (req, res) => {
   try {
-    const { error } = await supabase
-      .from('data_sc_pending')
-      .delete()
-      .eq('id', req.params.rowNum);
-
+    const { error } = await supabase.from('data_sc_pending').delete().eq('id', req.params.rowNum);
     if (error) throw error;
     res.json({ success: true });
   } catch (err) {
@@ -577,55 +576,27 @@ app.post('/api/pending/approve/:rowNum', async (req, res) => {
   const { approvedBy } = req.body; 
 
   try {
-    // Ambil data pending yang akan disetujui
-    const { data: item, error: errPending } = await supabase
-      .from('data_sc_pending')
-      .select('*')
-      .eq('id', rowNum)
-      .single();
+    const { data: item, error: errPending } = await supabase.from('data_sc_pending').select('*').eq('id', rowNum).single();
+    if (errPending || !item) return res.status(504).json({ success: false, message: 'Data pending tidak ditemukan' });
 
-    if (errPending || !item) {
-      return res.status(504).json({ success: false, message: 'Data pending tidak ditemukan' });
-    }
-
-    // Ambil data master untuk memeriksa ketersediaan stok
-    const { data: mRow, error: errM } = await supabase
-      .from('data_master')
-      .select('id, yp, ys')
-      .eq('pn', item.pn)
-      .eq('lokasi', item.lokasi)
-      .maybeSingle();
-
-    if (errM || !mRow) {
-      return res.status(500).json({ success: false, message: `Item master untuk PN: ${item.pn} di Lokasi: ${item.lokasi} tidak ditemukan` });
-    }
+    const { data: mRow, error: errM } = await supabase.from('data_master').select('id, yp, ys').eq('pn', item.pn).eq('lokasi', item.lokasi).maybeSingle();
+    if (errM || !mRow) return res.status(500).json({ success: false, message: `Item master untuk PN: ${item.pn} di Lokasi: ${item.lokasi} tidak ditemukan` });
 
     const newYP = Math.max(0, Number(mRow.yp) - (Number(item.yp) || 0));
     const newYS = Math.max(0, Number(mRow.ys) - (Number(item.ys) || 0));
     const newTotal = newYP + newYS;
 
-    // Perbarui stok di database master
-    const { error: errUp } = await supabase
-      .from('data_master')
-      .update({ yp: newYP, ys: newYS, total: newTotal })
-      .eq('id', mRow.id);
-
+    const { error: errUp } = await supabase.from('data_master').update({ yp: newYP, ys: newYS, total: newTotal }).eq('id', mRow.id);
     if (errUp) throw errUp;
 
-    // Pindahkan log ke data_history_sc dengan status APPROVED
-    const { error: errHist } = await supabase
-      .from('data_history_sc')
-      .insert([{
+    const { error: errHist } = await supabase.from('data_history_sc').insert([{
         lokasi: item.lokasi, model: item.model, pn: item.pn, material: item.material, waktu: item.waktu, 
         odf: item.odf, yp: item.yp, ys: item.ys, in_out: item.in_out, keterangan: item.keterangan, 
         no_ro: item.no_ro, status: 'APPROVED', picker: item.picker || 'System', approval: approvedBy || 'Admin'
       }]);
-
     if (errHist) throw errHist;
 
-    // Hapus data dari daftar pending
     await supabase.from('data_sc_pending').delete().eq('id', rowNum);
-    
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Gagal meng-approve transaksi', error: err.message });
@@ -648,6 +619,11 @@ app.post('/api/transactions/batch', async (req, res) => {
 
   const waktuSekarang = new Date().toISOString();
   let errors = [];
+  
+  // Tracker in-memory untuk menghitung penggunaan stok dalam satu batch/request 
+  // mencegah bypass jika user request OUT berkali-kali untuk item yang sama di list
+  const sessionPendingYP = {};
+  const sessionPendingYS = {};
 
   try {
     for (const item of transactionItems) {
@@ -666,18 +642,11 @@ app.post('/api/transactions/batch', async (req, res) => {
         if (findError) throw findError;
 
         if (mRow) {
-          // Tambahkan stok master secara langsung untuk transaksi IN
           const newYP = Number(mRow.yp) + ypVal;
           const newYS = Number(mRow.ys) + ysVal;
-          await supabase
-            .from('data_master')
-            .update({ yp: newYP, ys: newYS, total: newYP + newYS })
-            .eq('id', mRow.id);
+          await supabase.from('data_master').update({ yp: newYP, ys: newYS, total: newYP + newYS }).eq('id', mRow.id);
 
-          // Masuk ke log history utama secara otomatis dengan status APPROVED
-          await supabase
-            .from('data_history_sc')
-            .insert([{
+          await supabase.from('data_history_sc').insert([{
               lokasi: item.lokasi, model: item.model, pn: item.pn, material: item.material, waktu: waktuSekarang, 
               odf: item.odf, yp: ypVal, ys: ysVal, in_out: 'IN', keterangan: item.keterangan, 
               no_ro: item.noRo, status: 'APPROVED', picker: itemPicker, approval: 'AUTO'
@@ -686,10 +655,58 @@ app.post('/api/transactions/batch', async (req, res) => {
           errors.push(`Gagal IN: PN '${item.pn}' di Lokasi '${item.lokasi}' tidak terdaftar di Database Master.`);
         }
       } else {
-        // Transaksi OUT masuk ke seksi pending terlebih dahulu menunggu persetujuan Admin
-        await supabase
+        // --- VALIDASI OUT (PENCEGAHAN MELEBIHI STOK TERSISA) ---
+        const { data: mRow, error: findError } = await supabase
+          .from('data_master')
+          .select('yp, ys')
+          .eq('pn', item.pn)
+          .eq('lokasi', item.lokasi)
+          .maybeSingle();
+        
+        if (findError) throw findError;
+
+        if (!mRow) {
+          errors.push(`Gagal OUT: PN '${item.pn}' di Lokasi '${item.lokasi}' tidak ditemukan di Master.`);
+          continue;
+        }
+
+        // Hitung stok yang sedang tertahan di Pending
+        const { data: pendingRows, error: pendingError } = await supabase
           .from('data_sc_pending')
-          .insert([{
+          .select('yp, ys')
+          .eq('pn', item.pn)
+          .eq('lokasi', item.lokasi);
+
+        if (pendingError) throw pendingError;
+
+        let totalPendingYP = 0;
+        let totalPendingYS = 0;
+        if (pendingRows) {
+            pendingRows.forEach(p => {
+                totalPendingYP += (parseInt(p.yp) || 0);
+                totalPendingYS += (parseInt(p.ys) || 0);
+            });
+        }
+
+        const key = `${item.pn}_${item.lokasi}`;
+        const currentSessionYP = sessionPendingYP[key] || 0;
+        const currentSessionYS = sessionPendingYS[key] || 0;
+
+        // Stok Available = Master - Pending di Database - Pending yang sedang diproses di batch ini
+        const availableYP = Math.max(0, (parseInt(mRow.yp) || 0) - totalPendingYP - currentSessionYP);
+        const availableYS = Math.max(0, (parseInt(mRow.ys) || 0) - totalPendingYS - currentSessionYS);
+
+        if (ypVal > availableYP || ysVal > availableYS) {
+            errors.push(`Gagal OUT: Baris '${item.pn}' - Melebihi ketersediaan. (Sisa Stok Available -> YP: ${availableYP}, YS: ${availableYS})`);
+            continue;
+        }
+
+        // Catat penggunaan dalam memori agar row selanjutnya tervalidasi
+        sessionPendingYP[key] = currentSessionYP + ypVal;
+        sessionPendingYS[key] = currentSessionYS + ysVal;
+
+        // Lanjut masukkan ke Pending jika valid
+        await supabase.from('data_sc_pending').insert([{
             lokasi: item.lokasi, model: item.model, pn: item.pn, material: item.material, waktu: waktuSekarang, 
             odf: item.odf, yp: ypVal, ys: ysVal, in_out: 'OUT', keterangan: item.keterangan, 
             no_ro: item.noRo, status: 'PROSES', picker: itemPicker
@@ -698,7 +715,7 @@ app.post('/api/transactions/batch', async (req, res) => {
     }
     
     if (errors.length > 0) {
-      res.status(500).json({ success: false, message: errors.join('. ') });
+      res.status(400).json({ success: false, message: errors.join('\n') });
     } else {
       res.json({ success: true });
     }
@@ -715,17 +732,12 @@ app.post('/api/transactions/batch', async (req, res) => {
 // REKAP KATEGORI PERGERAKAN UNTUK BAGIAN CHART DOUGHNUT
 app.get('/api/chart-summary', async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('data_history_sc')
-      .select('keterangan');
-
+    const { data, error } = await supabase.from('data_history_sc').select('keterangan');
     if (error) throw error;
     
     const summary = {};
     data.forEach(r => { 
-      if (r.keterangan) {
-        summary[r.keterangan] = (summary[r.keterangan] || 0) + 1;
-      }
+      if (r.keterangan) summary[r.keterangan] = (summary[r.keterangan] || 0) + 1;
     });
     res.json(summary);
   } catch (err) {
@@ -736,22 +748,11 @@ app.get('/api/chart-summary', async (req, res) => {
 // DETAIL DRILLDOWN KATEGORI KETIKA IRISAN GRAFIK DIKLIK
 app.get('/api/drilldown', async (req, res) => {
   const keterangan = req.query.keterangan;
-  
   try {
-    const { data: logsRows, error: errLogs } = await supabase
-      .from('data_history_sc')
-      .select('lokasi, model, pn, material, waktu, yp, ys')
-      .eq('keterangan', keterangan)
-      .order('id', { ascending: false })
-      .limit(30);
-
+    const { data: logsRows, error: errLogs } = await supabase.from('data_history_sc').select('lokasi, model, pn, material, waktu, yp, ys').eq('keterangan', keterangan).order('id', { ascending: false }).limit(30);
     if (errLogs) throw errLogs;
 
-    const { data: allGroupData, error: errGroup } = await supabase
-      .from('data_history_sc')
-      .select('material, yp, ys')
-      .eq('keterangan', keterangan);
-
+    const { data: allGroupData, error: errGroup } = await supabase.from('data_history_sc').select('material, yp, ys').eq('keterangan', keterangan);
     if (errGroup) throw errGroup;
 
     const materialGroups = {};
@@ -762,11 +763,7 @@ app.get('/api/drilldown', async (req, res) => {
       materialGroups[mat].ys += (Number(g.ys) || 0);
     });
 
-    const formattedLogs = (logsRows || []).map(d => ({ 
-      ...d, 
-      waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : '-' 
-    }));
-
+    const formattedLogs = (logsRows || []).map(d => ({ ...d, waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : '-' }));
     res.json({ recentLogs: formattedLogs, materialGroups });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -776,25 +773,9 @@ app.get('/api/drilldown', async (req, res) => {
 // RIWAYAT TRANSAKSI SPESIFIK ITEM DI DATABASE MASTER
 app.get('/api/item-history', async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('data_history_sc')
-      .select('waktu, in_out, yp, ys, keterangan, no_ro')
-      .eq('pn', req.query.pn)
-      .eq('lokasi', req.query.lokasi)
-      .order('id', { ascending: false })
-      .limit(20);
-
+    const { data, error } = await supabase.from('data_history_sc').select('waktu, in_out, yp, ys, keterangan, no_ro').eq('pn', req.query.pn).eq('lokasi', req.query.lokasi).order('id', { ascending: false }).limit(20);
     if (error) throw error;
-
-    const formatted = (data || []).map(d => ({
-      waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : '-',
-      type: d.in_out,
-      yp: d.yp,
-      ys: d.ys,
-      keterangan: d.keterangan,
-      noRo: d.no_ro
-    }));
-
+    const formatted = (data || []).map(d => ({ waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : '-', type: d.in_out, yp: d.yp, ys: d.ys, keterangan: d.keterangan, noRo: d.no_ro }));
     res.json(formatted);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -814,25 +795,14 @@ app.get('/api/backup', async (req, res) => {
 
   try {
     let query = supabase.from('data_backup_history_25_26').select('*', { count: 'exact' });
+    if (search) query = query.or(`pn.ilike.%${search}%,model.ilike.%${search}%,no_ro.ilike.%${search}%`);
 
-    if (search) {
-      query = query.or(`pn.ilike.%${search}%,model.ilike.%${search}%,no_ro.ilike.%${search}%`);
-    }
-
-    const { data, count, error } = await query
-      .range(offset, offset + pageSize - 1)
-      .order('id', { ascending: false });
-    
+    const { data, count, error } = await query.range(offset, offset + pageSize - 1).order('id', { ascending: false });
     if (error) throw error;
 
     const formattedData = (data || []).map(d => ({ 
-      ...d, 
-      rowNum: d.id, 
-      type: d.in_out, 
-      noRo: d.no_ro,
-      waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-'
+      ...d, rowNum: d.id, type: d.in_out, noRo: d.no_ro, waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-'
     }));
-
     res.json({ success: true, data: formattedData, totalPages: Math.ceil(count / pageSize), currentPage: page, totalItems: count });
   } catch (err) {
     res.json({ success: true, data: [], totalPages: 0, currentPage: 1, totalItems: 0, error: err.message });
