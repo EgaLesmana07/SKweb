@@ -473,19 +473,57 @@ app.get('/api/history', async (req, res) => {
   }
 });
 
-// API EDIT LOG TRANSAKSI HISTORY
+// API EDIT LOG TRANSAKSI HISTORY (Telah diperbaiki bug parsing dan Auto-Kalkulasi stok Master)
 app.put('/api/history/:rowNum', async (req, res) => {
-  const { lokasi, model, pn, material, waktu, odf, yp, ys, type, keterangan, noRo, picker, approval } = req.body;
+  const rowNum = req.params.rowNum;
+  // Catatan: Variabel 'waktu' tidak lagi diambil dari req.body untuk menghindari Error PostgreSQL (karena format frontend adalah string lokal).
+  const { lokasi, model, pn, material, odf, yp, ys, type, keterangan, noRo, picker, approval } = req.body;
+  const newYP = Number(yp) || 0;
+  const newYS = Number(ys) || 0;
+
   try {
-    const { error } = await supabase
+    // 1. Ambil data history lama untuk reverse (membalikkan) stok di database master
+    const { data: oldItem, error: errOld } = await supabase.from('data_history_sc').select('*').eq('id', rowNum).single();
+    if (errOld || !oldItem) return res.status(404).json({ success: false, message: 'Data log history tidak ditemukan' });
+
+    // 2. Kalkulasi reverse stok dari master data lama 
+    const oldMultiplier = (oldItem.in_out === 'IN') ? -1 : 1; // Jika transaksi lama IN, berarti master harus dikurangi. Jika OUT, ditambah.
+    const revertYPChange = (Number(oldItem.yp) || 0) * oldMultiplier;
+    const revertYSChange = (Number(oldItem.ys) || 0) * oldMultiplier;
+
+    const { data: oldMaster } = await supabase.from('data_master').select('id, yp, ys').eq('pn', oldItem.pn).eq('lokasi', oldItem.lokasi).maybeSingle();
+    
+    if (oldMaster) {
+      const revertYP = Math.max(0, Number(oldMaster.yp) + revertYPChange);
+      const revertYS = Math.max(0, Number(oldMaster.ys) + revertYSChange);
+      await supabase.from('data_master').update({ yp: revertYP, ys: revertYS, total: revertYP + revertYS }).eq('id', oldMaster.id);
+    }
+
+    // 3. Aplikasikan perubahan stok terbaru hasil Edit ke Master Database
+    const newMultiplier = (type === 'IN') ? 1 : -1; // Jika transaksi baru IN, tambah stok master. Jika OUT, kurangi.
+    const applyYPChange = newYP * newMultiplier;
+    const applyYSChange = newYS * newMultiplier;
+
+    const { data: newMaster } = await supabase.from('data_master').select('id, yp, ys').eq('pn', pn).eq('lokasi', lokasi).maybeSingle();
+    
+    if (newMaster) {
+      const applyYP = Math.max(0, Number(newMaster.yp) + applyYPChange);
+      const applyYS = Math.max(0, Number(newMaster.ys) + applyYSChange);
+      await supabase.from('data_master').update({ yp: applyYP, ys: applyYS, total: applyYP + applyYS }).eq('id', newMaster.id);
+    }
+
+    // 4. Update data log history itu sendiri
+    const { error: updateError } = await supabase
       .from('data_history_sc')
       .update({ 
-        lokasi, model, pn, material, waktu, odf, 
-        yp: Number(yp)||0, ys: Number(ys)||0, in_out: type, keterangan, no_ro: noRo, picker, approval 
+        lokasi, model, pn, material, odf, 
+        yp: newYP, ys: newYS, in_out: type, keterangan, no_ro: noRo,
+        ...(picker !== undefined && { picker }),
+        ...(approval !== undefined && { approval })
       })
-      .eq('id', req.params.rowNum);
+      .eq('id', rowNum);
 
-    if (error) throw error;
+    if (updateError) throw updateError;
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Gagal memperbarui log history', error: err.message });

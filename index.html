@@ -1681,10 +1681,29 @@
 
         function closeHistoryModal() { document.getElementById('modal-history').classList.add('hidden'); }
 
+        // Di dalam fungsi ini pengiriman variabel 'waktu' Dihapus agar menghindari error
         function saveHistory() {
             if (getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return;
             const b = document.getElementById('btn-save-history'), o = b.innerText; b.disabled = true; b.innerText = "PROSES..."; showLoading(true, "Menyimpan...");
-            fetch(`/api/history/${document.getElementById('hist-row').value}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rowNum: document.getElementById('hist-row').value, lokasi: document.getElementById('hist-lokasi').value, model: document.getElementById('hist-model').value, pn: document.getElementById('hist-pn').value, material: document.getElementById('hist-material').value, waktu: document.getElementById('hist-waktu').value, odf: document.getElementById('hist-odf').value||"", yp: parseInt(document.getElementById('hist-yp').value)||0, ys: parseInt(document.getElementById('hist-ys').value)||0, type: document.getElementById('hist-type').value, keterangan: document.getElementById('hist-ket').value, noRo: document.getElementById('hist-ro').value||"" }) })
+            
+            fetch(`/api/history/${document.getElementById('hist-row').value}`, { 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    rowNum: document.getElementById('hist-row').value, 
+                    lokasi: document.getElementById('hist-lokasi').value, 
+                    model: document.getElementById('hist-model').value, 
+                    pn: document.getElementById('hist-pn').value, 
+                    material: document.getElementById('hist-material').value, 
+                    // waktu: document.getElementById('hist-waktu').value, <-- INI YANG DIHAPUS
+                    odf: document.getElementById('hist-odf').value||"", 
+                    yp: parseInt(document.getElementById('hist-yp').value)||0, 
+                    ys: parseInt(document.getElementById('hist-ys').value)||0, 
+                    type: document.getElementById('hist-type').value, 
+                    keterangan: document.getElementById('hist-ket').value, 
+                    noRo: document.getElementById('hist-ro').value||"" 
+                }) 
+            })
             .then(r => { if(!r.ok) return r.json().then(e=>{throw new Error(e.message||'Gagal')}); return r.json(); })
             .then(() => { b.disabled = false; b.innerText = o; closeHistoryModal(); fetchHistory(historyCurrentPage); fetchDatabase(dbCurrentPage); loadChartOptimized(() => refreshAutocomplete(() => showLoading(false))); showToast("Sukses", "History Diperbarui!", "success"); })
             .catch(e => { b.disabled = false; b.innerText = o; showLoading(false); showToast("Gagal", e.message, "error"); });
