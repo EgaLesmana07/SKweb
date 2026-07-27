@@ -98,7 +98,21 @@
     </div>
 
     <!-- Modals Konfirmasi -->
-    <div id="confirm-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 modal-overlay animate-fade-in">
+    <div id="confirm-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4 modal-overlay animate-fade-in">
+        <div class="bg-white w-full max-w-sm rounded-[24px] p-6 shadow-2xl text-center mx-4 scale-in">
+            <div class="bg-rose-100 text-rose-600 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-trash-can text-xl"></i>
+            </div>
+            <h3 class="text-base sm:text-lg font-black text-gray-800 mb-2">Hapus Data?</h3>
+            <p id="confirm-modal-desc" class="text-xs sm:text-sm text-gray-500 mb-6 font-medium">Tindakan ini tidak dapat dibatalkan.</p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-gray-600 text-sm transition-colors">Batal</button>
+                <button id="confirm-delete-btn" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black text-sm shadow-md transition-colors">Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="approve-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4 modal-overlay animate-fade-in">
         <div class="bg-white w-full max-w-sm rounded-[24px] p-6 shadow-2xl text-center mx-4 scale-in">
             <div class="bg-rose-100 text-rose-600 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="fa-solid fa-trash-can text-xl"></i>
@@ -438,7 +452,7 @@
                         </div>
                         <button onclick="openUserModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all shrink-0">
                             <i class="fa-solid fa-user-plus text-xs"></i> Tambah Akun Baru
-                        </button>
+                       </button>
                     </div>
                     <div class="overflow-x-auto overflow-y-auto custom-scrollbar flex-1 min-h-0">
                         <table class="w-full text-left min-w-[600px] border-collapse">
@@ -902,6 +916,8 @@
         let renderedUsersData = [];
         let dbCsvImportPendingData = [];
         
+        let currentViewLokasi = ''; // Menambahkan variabel untuk melacak Lokasi yang sedang dibuka di modal
+
         const PAGE_SIZE = 50;
 
         function getRoleUpper() { return String(currentRole || 'Guest').trim().replace(/\s+/g, '').toUpperCase(); }
@@ -1010,10 +1026,14 @@
         }
 
         function renderLokasiDetail(lokasiName) {
+            currentViewLokasi = lokasiName;
             document.getElementById('btn-back-lokasi').classList.remove('hidden');
             document.getElementById('lokasi-modal-title').innerHTML = `<i class="fa-solid fa-map-location-dot text-blue-500"></i> Detail Lokasi: <span class="text-gray-800">${lokasiName}</span>`;
             const contentDiv = document.getElementById('lokasi-modal-content');
             
+            const roleUpper = getRoleUpper();
+            const showCheckbox = roleUpper === 'SUPERADMIN' || roleUpper === 'ADMIN';
+
             const items = autocompleteCache.filter(item => {
                 if (!item.lokasi && lokasiName === 'Tanpa Lokasi') return true;
                 return item.lokasi && item.lokasi.split(',').map(l => l.trim()).includes(lokasiName);
@@ -1029,21 +1049,61 @@
                             <div class="text-left sm:text-right"><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total YP</p><p class="text-lg font-black text-blue-600">${items.reduce((sum, i) => sum + (parseInt(i.yp) || 0), 0)}</p></div>
                             <div class="text-left sm:text-right border-l border-gray-200 pl-6 sm:pl-4"><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total YS</p><p class="text-lg font-black text-orange-500">${items.reduce((sum, i) => sum + (parseInt(i.ys) || 0), 0)}</p></div>
                         </div>
-                        <div class="w-full sm:w-auto mt-2 sm:mt-0 sm:border-l sm:border-gray-200 sm:pl-4">
+                        <div class="w-full sm:w-auto mt-2 sm:mt-0 sm:border-l sm:border-gray-200 sm:pl-4 flex flex-wrap gap-2">
+                            ${showCheckbox ? `<button id="btn-bulk-delete-lokasi" onclick="confirmBulkDeleteLokasi()" class="hidden w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"><i class="fa-solid fa-trash-can"></i> Hapus (<span id="bulk-delete-count">0</span>)</button>` : ''}
                             <button onclick="exportLokasiDetailCSV('${lokasiName.replace(/'/g, "\\'")}')" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
                         </div>
                     </div>
                 </div>
                 <div class="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
                     <table class="w-full text-left min-w-[700px] border-collapse bg-white">
-                        <thead class="text-[11px] font-bold text-gray-400 uppercase border-b border-gray-200"><tr><th class="px-5 py-3.5">Model</th><th class="px-5 py-3.5">Part Number (PN)</th><th class="px-5 py-3.5">Deskripsi / Material</th><th class="px-5 py-3.5 text-center bg-blue-50/50">YP</th><th class="px-5 py-3.5 text-center bg-orange-50/50">YS</th><th class="px-5 py-3.5 text-center">Total</th></tr></thead>
+                        <thead class="text-[11px] font-bold text-gray-400 uppercase border-b border-gray-200"><tr>
+                            ${showCheckbox ? `<th class="px-5 py-3.5 w-10 text-center"><input type="checkbox" id="selectAllLokasi" onclick="toggleAllLokasi(this)" class="w-4 h-4 rounded text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 cursor-pointer"></th>` : ''}
+                            <th class="px-5 py-3.5">Model</th><th class="px-5 py-3.5">Part Number (PN)</th><th class="px-5 py-3.5">Deskripsi / Material</th><th class="px-5 py-3.5 text-center bg-blue-50/50">YP</th><th class="px-5 py-3.5 text-center bg-orange-50/50">YS</th><th class="px-5 py-3.5 text-center">Total</th></tr></thead>
                         <tbody class="divide-y divide-gray-100 text-xs text-gray-700">
             `;
             items.forEach(item => {
                 const yp = parseInt(item.yp) || 0, ys = parseInt(item.ys) || 0;
-                html += `<tr class="hover:bg-gray-50 transition-colors"><td class="px-5 py-3 font-bold text-gray-800">${item.model || '-'}</td><td class="px-5 py-3 font-black text-blue-600">${item.pn || '-'}</td><td class="px-5 py-3 text-gray-500 max-w-[200px] truncate font-medium" title="${item.description}">${item.description || '-'}</td><td class="px-5 py-3 text-center font-bold text-blue-600 bg-blue-50/20">${yp}</td><td class="px-5 py-3 text-center font-bold text-orange-500 bg-orange-50/20">${ys}</td><td class="px-5 py-3 text-center font-black text-emerald-600">${yp + ys}</td></tr>`;
+                html += `<tr class="hover:bg-gray-50 transition-colors">
+                    ${showCheckbox ? `<td class="px-5 py-3 text-center"><input type="checkbox" class="lokasi-item-checkbox w-4 h-4 rounded text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 cursor-pointer" value="${item.id}" onclick="updateBulkDeleteBtn()"></td>` : ''}
+                    <td class="px-5 py-3 font-bold text-gray-800">${item.model || '-'}</td><td class="px-5 py-3 font-black text-blue-600">${item.pn || '-'}</td><td class="px-5 py-3 text-gray-500 max-w-[200px] truncate font-medium" title="${item.description}">${item.description || '-'}</td><td class="px-5 py-3 text-center font-bold text-blue-600 bg-blue-50/20">${yp}</td><td class="px-5 py-3 text-center font-bold text-orange-500 bg-orange-50/20">${ys}</td><td class="px-5 py-3 text-center font-black text-emerald-600">${yp + ys}</td></tr>`;
             });
             contentDiv.innerHTML = html + `</tbody></table></div>`;
+        }
+
+        function toggleAllLokasi(source) {
+            const checkboxes = document.querySelectorAll('.lokasi-item-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+            updateBulkDeleteBtn();
+        }
+
+        function updateBulkDeleteBtn() {
+            const checkboxes = document.querySelectorAll('.lokasi-item-checkbox:checked');
+            const btn = document.getElementById('btn-bulk-delete-lokasi');
+            const countSpan = document.getElementById('bulk-delete-count');
+            
+            // Jika ada baris centang tapi dicentang tidak semua, pastikan selectAll menyesuaikan
+            const selectAllCb = document.getElementById('selectAllLokasi');
+            const allCheckboxes = document.querySelectorAll('.lokasi-item-checkbox');
+            if (selectAllCb) { selectAllCb.checked = checkboxes.length === allCheckboxes.length && allCheckboxes.length > 0; }
+
+            if(btn && countSpan) {
+                countSpan.innerText = checkboxes.length;
+                if(checkboxes.length > 0) { btn.classList.remove('hidden'); } 
+                else { btn.classList.add('hidden'); }
+            }
+        }
+
+        function confirmBulkDeleteLokasi() {
+            const checkboxes = document.querySelectorAll('.lokasi-item-checkbox:checked');
+            // PASTIKAN PARSING KE INTEGER AGAR SUPABASE TIDAK ERROR (Type mismatch)
+            const ids = Array.from(checkboxes).map(cb => parseInt(cb.value, 10)).filter(id => !isNaN(id));
+            if (ids.length === 0) return;
+            
+            pendingDeleteRow = ids;
+            pendingDeleteType = 'bulk-lokasi';
+            document.getElementById('confirm-modal-desc').innerText = `Hapus ${ids.length} item secara permanen dari Database Master? Tindakan ini tidak dapat dikembalikan.`;
+            document.getElementById('confirm-modal').classList.remove('hidden');
         }
 
         function exportLokasiDetailCSV(lokasiName) {
@@ -1716,6 +1776,27 @@
 
         function executeDelete() {
             if(!pendingDeleteRow) return; const b = document.getElementById('confirm-delete-btn'), o = b.innerText; b.disabled = true; b.innerText = "Proses..."; showLoading(true, "Mengeksekusi...");
+            
+            if (pendingDeleteType === 'bulk-lokasi') {
+                fetch('/api/database/bulk', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: pendingDeleteRow })
+                }).then(r => { if(!r.ok) return r.json().then(e=>{throw new Error(e.message||'Gagal')}); return r.json(); })
+                .then(res => {
+                    b.disabled = false; b.innerText = o; closeConfirmModal();
+                    showToast("Terhapus", res.message, "success");
+                    
+                    fetchDatabase(dbCurrentPage, () => {
+                        refreshAutocomplete(() => {
+                            showLoading(false);
+                            if (currentViewLokasi) renderLokasiDetail(currentViewLokasi);
+                        });
+                    });
+                }).catch(e => { b.disabled = false; b.innerText = o; showLoading(false); closeConfirmModal(); showToast("Gagal", e.message, "error"); });
+                return; // Stop eksekusi agar tidak lanjut ke logika delete single
+            }
+
             const url = pendingDeleteType==='db'?`/api/database/${pendingDeleteRow}`:pendingDeleteType==='history'?`/api/history/${pendingDeleteRow}`:pendingDeleteType==='pending'?`/api/pending/${pendingDeleteRow}`:`/api/users/${pendingDeleteRow}`;
             fetch(url, { method: 'DELETE' }).then(r => { if(!r.ok) return r.json().then(e=>{throw new Error(e.message||'Gagal')}); return r.json(); })
             .then(() => {
