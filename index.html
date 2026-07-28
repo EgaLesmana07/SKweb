@@ -112,27 +112,13 @@
         </div>
     </div>
 
-    <div id="approve-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4 modal-overlay animate-fade-in">
-        <div class="bg-white w-full max-w-sm rounded-[24px] p-6 shadow-2xl text-center mx-4 scale-in">
-            <div class="bg-rose-100 text-rose-600 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fa-solid fa-trash-can text-xl"></i>
-            </div>
-            <h3 class="text-base sm:text-lg font-black text-gray-800 mb-2">Hapus Data?</h3>
-            <p id="confirm-modal-desc" class="text-xs sm:text-sm text-gray-500 mb-6 font-medium">Tindakan ini tidak dapat dibatalkan.</p>
-            <div class="flex gap-3">
-                <button onclick="closeConfirmModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-gray-600 text-sm transition-colors">Batal</button>
-                <button id="confirm-delete-btn" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black text-sm shadow-md transition-colors">Hapus</button>
-            </div>
-        </div>
-    </div>
-
     <div id="approve-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 modal-overlay animate-fade-in">
         <div class="bg-white w-full max-w-sm rounded-[24px] p-6 shadow-2xl text-center mx-4 scale-in">
             <div class="bg-emerald-100 text-emerald-600 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="fa-solid fa-check-to-slot text-xl"></i>
             </div>
             <h3 class="text-base sm:text-lg font-black text-gray-800 mb-2">Approve Transaksi?</h3>
-            <p class="text-xs sm:text-sm text-gray-500 mb-6 font-medium">Stok master akan dikurangi dan data dipindahkan ke History SC.</p>
+            <p class="text-xs sm:text-sm text-gray-500 mb-6 font-medium">Stok master akan dikurangi/ditambah dan data dipindahkan ke History.</p>
             <div class="flex gap-3">
                 <button onclick="closeApproveModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-gray-600 text-sm transition-colors">Batal</button>
                 <button id="confirm-approve-btn" onclick="executeApprove()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-sm shadow-md transition-colors">Approve</button>
@@ -397,6 +383,79 @@
                         </table>
                     </div>
                     <div id="history-pagination" class="p-3 sm:p-4 border-t border-gray-50 bg-gray-50/30 flex items-center justify-between text-xs font-semibold text-gray-500 shrink-0"></div>
+                </div>
+            </div>
+
+            <!-- NG Pending Tab -->
+            <div id="tab-ng-pending" class="hidden h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
+                <div class="bg-white rounded-3xl border border-gray-100 shadow-sm flex-1 flex flex-col overflow-hidden">
+                    <div class="p-3.5 sm:p-5 border-b border-gray-50 flex flex-col sm:flex-row gap-3 justify-between sm:items-center bg-gray-50/30 shrink-0">
+                        <div class="flex items-center gap-2">
+                            <div class="bg-rose-100 text-rose-600 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <h3 class="font-black text-gray-700">Daftar NG Pending</h3>
+                        </div>
+                        <div class="relative w-full sm:w-80 md:w-96">
+                            <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                            <input type="text" id="search-ng-pending" onkeyup="handleSearchNgPending()" placeholder="Cari PN, Model, Lokasi..." class="w-full pl-11 pr-4 py-2.5 rounded-xl border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none text-xs sm:text-sm font-medium">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                        <table class="w-full text-left min-w-[1000px] border-collapse">
+                            <thead class="text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-white border-b border-gray-100 z-10">
+                                <tr>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Lokasi</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Model</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">PN</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Material</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Waktu</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">YP</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">YS</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">IN/OUT</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Picker</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Status</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4 text-center class-aksi-pending-col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ng-pending-body" class="divide-y divide-gray-50 text-[11px] sm:text-sm"></tbody>
+                        </table>
+                    </div>
+                    <div id="ng-pending-pagination" class="p-3 sm:p-4 border-t border-gray-50 bg-gray-50/30 flex items-center justify-between text-xs font-semibold text-gray-500 shrink-0"></div>
+                </div>
+            </div>
+
+            <!-- History NG Tab -->
+            <div id="tab-history-ng" class="hidden h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
+                <div class="bg-white rounded-3xl border border-gray-100 shadow-sm flex-1 flex flex-col overflow-hidden">
+                    <div class="p-3.5 sm:p-5 border-b border-gray-50 flex flex-col sm:flex-row gap-3 justify-between sm:items-center bg-gray-50/30 shrink-0">
+                        <div class="flex items-center gap-2">
+                            <div class="bg-gray-100 text-gray-600 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                            <h3 class="font-black text-gray-700">History NG Ter-Approve</h3>
+                        </div>
+                        <div class="relative w-full sm:w-80 md:w-96">
+                            <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                            <input type="text" id="search-history-ng" onkeyup="handleSearchHistoryNg()" placeholder="Cari PN, Model, Lokasi..." class="w-full pl-11 pr-4 py-2.5 rounded-xl border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none text-xs sm:text-sm font-medium">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                        <table class="w-full text-left min-w-[1000px] border-collapse">
+                            <thead class="text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-white border-b border-gray-100 z-10">
+                                <tr>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Lokasi</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Model</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">PN</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Material</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Waktu</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">YP</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">YS</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">IN/OUT</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Picker</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Approval</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-ng-body" class="divide-y divide-gray-50 text-[11px] sm:text-sm"></tbody>
+                        </table>
+                    </div>
+                    <div id="history-ng-pagination" class="p-3 sm:p-4 border-t border-gray-50 bg-gray-50/30 flex items-center justify-between text-xs font-semibold text-gray-500 shrink-0"></div>
                 </div>
             </div>
 
@@ -863,6 +922,7 @@
                             <option value="NG FG">NG FG</option>
                             <option value="NG SK">NG SK</option>
                             <option value="NG Kedatangan">NG Kedatangan</option>
+                            <option value="NG Pending">NG Pending</option>
                             <option value="Return">Return</option>
                             <option value="Scrap">Scrap</option>
                             <option value="Pakai Kits">Pakai Kits</option>
@@ -886,6 +946,61 @@
         </div>
     </div>
 
+    <!-- Modal Edit NG Pending -->
+    <div id="modal-ng-edit" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 modal-overlay animate-fade-in">
+        <div class="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl scale-in max-h-[90dvh] overflow-y-auto custom-scrollbar pb-8">
+            <h3 class="text-base sm:text-lg font-black mb-5 text-rose-600"><i class="fa-solid fa-pen-to-square"></i> Edit Transaksi NG Pending</h3>
+            <input type="hidden" id="ng-edit-row">
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Lokasi</label>
+                        <input type="text" id="ng-edit-lokasi" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 text-sm font-semibold cursor-not-allowed" readonly>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Model</label>
+                        <input type="text" id="ng-edit-model" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 text-sm font-semibold cursor-not-allowed" readonly>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Part Number (PN)</label>
+                    <input type="text" id="ng-edit-pn" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 font-bold text-blue-600 text-sm cursor-not-allowed" readonly>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">ODF</label>
+                        <input type="text" id="ng-edit-odf" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">YP</label>
+                        <input type="number" id="ng-edit-yp" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 font-bold text-blue-600 text-sm text-center">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">YS</label>
+                        <input type="number" id="ng-edit-ys" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 font-bold text-orange-600 text-sm text-center">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">IN / OUT</label>
+                        <select id="ng-edit-type" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 text-sm font-black">
+                            <option value="IN">IN</option>
+                            <option value="OUT">OUT</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">No. RO</label>
+                        <input type="text" id="ng-edit-ro" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 text-sm">
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-8">
+                <button onclick="closeNgEditModal()" class="flex-1 py-3 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors">Batal</button>
+                <button id="btn-save-ng" onclick="saveNgEdit()" class="flex-[2] py-3.5 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 shadow-md transition-all text-sm">SIMPAN PERUBAHAN</button>
+            </div>
+        </div>
+    </div>
+
     <!-- SCRIPT JAVASCRIPT -->
     <script>
         let currentUser = null;
@@ -896,6 +1011,8 @@
         let dbCurrentPage = 1, dbSearchQuery = "", dbTotalPages = 1;
         let historyCurrentPage = 1, historySearchQuery = "", historyTotalPages = 1;
         let pendingCurrentPage = 1, pendingSearchQuery = "", pendingTotalPages = 1;
+        let ngPendingCurrentPage = 1, ngPendingSearchQuery = "", ngPendingTotalPages = 1;
+        let historyNgCurrentPage = 1, historyNgSearchQuery = "", historyNgTotalPages = 1;
         let backupCurrentPage = 1, backupSearchQuery = "", backupTotalPages = 1;
         
         let myChart = null;
@@ -904,6 +1021,7 @@
         let pendingDeleteRow = null;
         let pendingDeleteType = 'db'; 
         let pendingApproveRow = null;
+        let pendingApproveType = 'normal'; // 'normal' atau 'ng'
         
         let isSidebarOpen = false; 
         let transRows = [];
@@ -912,6 +1030,8 @@
         let renderedDbData = [];
         let renderedHistoryData = [];
         let renderedPendingData = [];
+        let renderedNgPendingData = [];
+        let renderedHistoryNgData = [];
         let renderedBackupData = [];
         let renderedUsersData = [];
         let dbCsvImportPendingData = [];
@@ -1256,9 +1376,11 @@
                 html += `
                     <button onclick="switchTab('transaksi')" id="btn-transaksi" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-right-left w-8"></i> In / Out Barang</button>
                     <button onclick="switchTab('pending')" id="btn-pending" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-clipboard-list w-8"></i> SC Pending</button>
+                    <button onclick="switchTab('ng-pending')" id="btn-ng-pending" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-triangle-exclamation w-8"></i> NG Pending</button>
                 `;
             }
             html += `<button onclick="switchTab('history')" id="btn-history" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-clock-rotate-left w-8"></i> History SC</button>`;
+            html += `<button onclick="switchTab('history-ng')" id="btn-history-ng" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-clock-rotate-left text-rose-500 w-8"></i> History NG</button>`;
             if (roleUpper === 'ADMIN' || roleUpper === 'SUPERADMIN' || roleUpper === 'OPERATOR') {
                 html += `<button onclick="switchTab('backup')" id="btn-backup" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-box-archive w-8"></i> Backup History 25-26</button>`;
             }
@@ -1296,10 +1418,10 @@
 
         function switchTab(tabId) {
             const roleUpper = getRoleUpper();
-            if (roleUpper === 'GUEST' && ['transaksi', 'backup', 'pending'].includes(tabId)) { showToast("Akses Ditolak", "Silakan login terlebih dahulu.", "error"); return switchTab('dashboard'); }
+            if (roleUpper === 'GUEST' && ['transaksi', 'backup', 'pending', 'ng-pending'].includes(tabId)) { showToast("Akses Ditolak", "Silakan login terlebih dahulu.", "error"); return switchTab('dashboard'); }
             if (tabId === 'registrasi' && roleUpper !== 'SUPERADMIN') { showToast("Akses Ditolak", "Khusus SuperAdmin.", "error"); return switchTab('dashboard'); }
 
-            ['dashboard', 'database', 'transaksi', 'history', 'backup', 'pending', 'registrasi'].forEach(id => {
+            ['dashboard', 'database', 'transaksi', 'history', 'backup', 'pending', 'ng-pending', 'history-ng', 'registrasi'].forEach(id => {
                 document.getElementById('tab-' + id)?.classList.add('hidden');
                 const btn = document.getElementById('btn-' + id); if (btn) { btn.classList.remove('sidebar-item-active', 'text-white'); btn.classList.add('text-gray-500'); }
             });
@@ -1307,7 +1429,7 @@
             document.getElementById('tab-' + tabId)?.classList.remove('hidden');
             const activeBtn = document.getElementById('btn-' + tabId); if (activeBtn) { activeBtn.classList.remove('text-gray-500'); activeBtn.classList.add('sidebar-item-active'); }
             
-            const titles = { 'history': 'History SC', 'backup': 'Backup History', 'pending': 'SC Pending', 'registrasi': 'Kelola Akun' };
+            const titles = { 'history': 'History SC', 'backup': 'Backup History', 'pending': 'SC Pending', 'ng-pending': 'NG Pending', 'history-ng': 'History NG', 'registrasi': 'Kelola Akun' };
             document.getElementById('page-title').innerText = titles[tabId] || tabId;
             if (tabId === 'registrasi') loadUsers();
             if (tabId === 'transaksi') transRows.forEach(rowId => updateRowStockInfo(rowId));
@@ -1316,11 +1438,11 @@
 
         function loadInitialData() {
             showLoading(true, "Memuat Data Warehouse...");
-            const roleUpper = getRoleUpper(); let totalSteps = roleUpper === 'GUEST' ? 4 : (roleUpper === 'SUPERADMIN' ? 7 : 6); let counter = 0;
+            const roleUpper = getRoleUpper(); let totalSteps = roleUpper === 'GUEST' ? 5 : (roleUpper === 'SUPERADMIN' ? 9 : 8); let counter = 0;
             const checkDone = () => { counter++; if (counter >= totalSteps) showLoading(false); };
 
-            refreshAutocomplete(() => checkDone()); fetchDatabase(1, () => checkDone()); fetchHistory(1, () => checkDone());
-            if (roleUpper !== 'GUEST') { fetchBackup(1, () => checkDone()); fetchPending(1, () => checkDone()); }
+            refreshAutocomplete(() => checkDone()); fetchDatabase(1, () => checkDone()); fetchHistory(1, () => checkDone()); fetchHistoryNg(1, () => checkDone());
+            if (roleUpper !== 'GUEST') { fetchBackup(1, () => checkDone()); fetchPending(1, () => checkDone()); fetchNgPending(1, () => checkDone()); }
             if (roleUpper === 'SUPERADMIN') loadUsers(() => checkDone());
             loadChartOptimized(() => checkDone());
         }
@@ -1409,6 +1531,27 @@
                 }).catch(() => { if (callback) callback(); });
         }
 
+        function fetchNgPending(page, callback) {
+            if (getRoleUpper() === 'GUEST') return;
+            ngPendingCurrentPage = page;
+            fetch(`/api/ng-pending?search=${encodeURIComponent(ngPendingSearchQuery)}&page=${ngPendingCurrentPage}&pageSize=${PAGE_SIZE}`)
+                .then(r => r.json()).then(res => {
+                    ngPendingTotalPages = res.totalPages; renderNgPending(res.data || []);
+                    renderPagination('ng-pending-pagination', ngPendingCurrentPage, ngPendingTotalPages, res.totalItems, 'fetchNgPending');
+                    adjustInterfaceAccess(); if (callback) callback();
+                }).catch(() => { if (callback) callback(); });
+        }
+
+        function fetchHistoryNg(page, callback) {
+            historyNgCurrentPage = page;
+            fetch(`/api/history-ng?search=${encodeURIComponent(historyNgSearchQuery)}&page=${historyNgCurrentPage}&pageSize=${PAGE_SIZE}`)
+                .then(r => r.json()).then(res => {
+                    historyNgTotalPages = res.totalPages; renderHistoryNg(res.data || []);
+                    renderPagination('history-ng-pagination', historyNgCurrentPage, historyNgTotalPages, res.totalItems, 'fetchHistoryNg');
+                    if (callback) callback();
+                }).catch(() => { if (callback) callback(); });
+        }
+
         function fetchBackup(page, callback) {
             if (getRoleUpper() === 'GUEST') return;
             backupCurrentPage = page;
@@ -1423,6 +1566,8 @@
         const handleSearchDB = debounce(() => { dbSearchQuery = document.getElementById('search-db').value; fetchDatabase(1); }, 300);
         const handleSearchHistory = debounce(() => { historySearchQuery = document.getElementById('search-history').value; fetchHistory(1); }, 300);
         const handleSearchPending = debounce(() => { pendingSearchQuery = document.getElementById('search-pending').value; fetchPending(1); }, 300);
+        const handleSearchNgPending = debounce(() => { ngPendingSearchQuery = document.getElementById('search-ng-pending').value; fetchNgPending(1); }, 300);
+        const handleSearchHistoryNg = debounce(() => { historyNgSearchQuery = document.getElementById('search-history-ng').value; fetchHistoryNg(1); }, 300);
         const handleSearchBackup = debounce(() => { if(getRoleUpper()!=='GUEST'){backupSearchQuery = document.getElementById('search-backup').value; fetchBackup(1);} }, 300);
 
         function renderPagination(containerId, currentPage, totalPages, totalItems, functionName) {
@@ -1545,7 +1690,7 @@
                     <div><label class="md:hidden text-[11px] font-bold text-gray-400 uppercase">ODF</label><input type="text" id="odf-${rowId}" class="w-full px-2 py-2.5 rounded-xl bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none text-[11px] sm:text-xs font-semibold text-gray-700" placeholder="ODF..."></div>
                 </div>
                 <div class="col-span-2 flex items-end md:items-center gap-3 mb-2 md:mb-0">
-                    <div class="flex-1"><label class="md:hidden text-[11px] font-bold text-gray-400 uppercase">Keterangan</label><select id="ket-${rowId}" class="w-full px-3 py-2.5 rounded-xl bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none font-medium text-[11px] sm:text-xs cursor-pointer text-gray-700"><option value="Kedatangan Barang" selected>Kedatangan Barang</option><option value="Pengiriman">Pengiriman</option><option value="NG Produksi">NG Produksi</option><option value="NG Repair">NG Repair</option><option value="NG FG">NG FG</option><option value="NG SK">NG SK</option><option value="NG Kedatangan">NG Kedatangan</option><option value="Return">Return</option><option value="Scrap">Scrap</option><option value="Pakai Kits">Pakai Kits</option><option value="Pakai Lebihan">Pakai Lebihan</option><option value="Dipakai Shortage">Dipakai Shortage</option><option value="Justment">Justment</option><option value="Support ENG">Support ENG</option><option value="Peminjaman">Peminjaman</option></select></div>
+                    <div class="flex-1"><label class="md:hidden text-[11px] font-bold text-gray-400 uppercase">Keterangan</label><select id="ket-${rowId}" onchange="validateRowStock(${rowId})" class="w-full px-3 py-2.5 rounded-xl bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none font-medium text-[11px] sm:text-xs cursor-pointer text-gray-700"><option value="Kedatangan Barang" selected>Kedatangan Barang</option><option value="Pengiriman">Pengiriman</option><option value="NG Produksi">NG Produksi</option><option value="NG Repair">NG Repair</option><option value="NG FG">NG FG</option><option value="NG SK">NG SK</option><option value="NG Kedatangan">NG Kedatangan</option><option value="NG Pending">NG Pending</option><option value="Return">Return</option><option value="Scrap">Scrap</option><option value="Pakai Kits">Pakai Kits</option><option value="Pakai Lebihan">Pakai Lebihan</option><option value="Dipakai Shortage">Dipakai Shortage</option><option value="Justment">Justment</option><option value="Support ENG">Support ENG</option><option value="Peminjaman">Peminjaman</option></select></div>
                     <button onclick="removeTransactionRow(${rowId})" class="p-2 mb-0.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl shrink-0"><i class="fa-solid fa-trash-can text-lg"></i></button>
                 </div>
             `;
@@ -1593,6 +1738,11 @@
 
         function validateRowStock(rowId) {
             const type = document.getElementById(`type-${rowId}`); if (!type || type.value !== 'OUT') return;
+            
+            const ketSelect = document.getElementById(`ket-${rowId}`);
+            // Mengabaikan limitasi validasi stok apabila "Keterangan" bernilai "NG Pending"
+            if (ketSelect && ketSelect.value === 'NG Pending') return; 
+
             const pnIn = document.getElementById(`pn-${rowId}`), lokSel = document.getElementById(`lokasi-${rowId}`), ypIn = document.getElementById(`yp-${rowId}`), ysIn = document.getElementById(`ys-${rowId}`);
             if (!pnIn || !lokSel || !ypIn || !ysIn) return;
             
@@ -1601,11 +1751,19 @@
             
             const match = autocompleteCache.find(x => String(x.lokasi).trim().toLowerCase() === lokVal.trim().toLowerCase() && isRowMatch(x, pnVal));
             let currentBatchYP = 0, currentBatchYS = 0;
+            
             for (let i = 0; i < transRows.length; i++) {
-                const otherId = transRows[i]; if (otherId === rowId || document.getElementById(`type-${otherId}`)?.value !== 'OUT') continue;
+                const otherId = transRows[i]; 
+                if (otherId === rowId || document.getElementById(`type-${otherId}`)?.value !== 'OUT') continue;
+                
+                // Pastikan penggunaan NG Pending baris lain juga tidak dihitung sebagai pengurang stok sementara
+                const oKet = document.getElementById(`ket-${otherId}`)?.value;
+                if (oKet === 'NG Pending') continue; 
+                
                 const oPn = document.getElementById(`pn-${otherId}`)?.value.trim(), oLok = document.getElementById(`lokasi-${otherId}`)?.value;
                 if (oPn && oLok && oPn.toLowerCase() === pnVal.toLowerCase() && oLok.toLowerCase() === lokVal.toLowerCase()) {
-                    currentBatchYP += parseInt(document.getElementById(`yp-${otherId}`)?.value) || 0; currentBatchYS += parseInt(document.getElementById(`ys-${otherId}`)?.value) || 0;
+                    currentBatchYP += parseInt(document.getElementById(`yp-${otherId}`)?.value) || 0; 
+                    currentBatchYS += parseInt(document.getElementById(`ys-${otherId}`)?.value) || 0;
                 }
             }
 
@@ -1650,7 +1808,8 @@
                 if (!lok) { validationError = `Baris #${i+1}: Pilih lokasi!`; break; }
                 if (yp===0 && ys===0) { validationError = `Baris #${i+1}: Masukkan Qty!`; break; }
                 
-                if (type === "OUT") {
+                // Pengecekan hanya untuk yang selain "NG Pending" saat tipe-nya "OUT"
+                if (type === "OUT" && ket !== 'NG Pending') {
                     const match = autocompleteCache.find(x => String(x.lokasi).trim().toLowerCase() === lok.trim().toLowerCase() && isRowMatch(x, pn));
                     const availYP = match && match.available_yp !== undefined ? match.available_yp : (match?parseInt(match.yp)||0:0);
                     const availYS = match && match.available_ys !== undefined ? match.available_ys : (match?parseInt(match.ys)||0:0);
@@ -1671,7 +1830,7 @@
             .then(res => { if(!res.ok) return res.json().then(e => { throw new Error(e.message||'Gagal') }); return res.json(); })
             .then(() => {
                 btn.disabled = false; btn.innerText = oriTxt; showToast("Sukses", `${itemsToSave.length} Transaksi diproses!`, "success"); resetBatchTransForm();
-                fetchDatabase(dbCurrentPage); fetchHistory(1); fetchPending(1); loadChartOptimized(); refreshAutocomplete(() => showLoading(false));
+                fetchDatabase(dbCurrentPage); fetchHistory(1); fetchPending(1); fetchNgPending(1); loadChartOptimized(); refreshAutocomplete(() => showLoading(false));
             }).catch(e => { btn.disabled = false; btn.innerText = oriTxt; showLoading(false); showToast("Gagal Menyimpan", e.message, "error"); });
         }
 
@@ -1772,6 +1931,7 @@
         function deleteItem(r) { if(getRoleUpper() !== 'SUPERADMIN') return showToast("Ditolak", "Hanya SuperAdmin", "error"); pendingDeleteRow=r; pendingDeleteType='db'; document.getElementById('confirm-modal-desc').innerText="Hapus dari Master?"; document.getElementById('confirm-modal').classList.remove('hidden'); }
         function deleteHistoryItem(r) { if(getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return; pendingDeleteRow=r; pendingDeleteType='history'; document.getElementById('confirm-modal-desc').innerText="Hapus log History?"; document.getElementById('confirm-modal').classList.remove('hidden'); }
         function rejectPendingItem(r) { if(getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return; pendingDeleteRow=r; pendingDeleteType='pending'; document.getElementById('confirm-modal-desc').innerText="Hapus transaksi Pending?"; document.getElementById('confirm-modal').classList.remove('hidden'); }
+        function rejectNgPendingItem(r) { if(getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return; pendingDeleteRow=r; pendingDeleteType='ng-pending'; document.getElementById('confirm-modal-desc').innerText="Hapus transaksi NG Pending?"; document.getElementById('confirm-modal').classList.remove('hidden'); }
         function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('hidden'); pendingDeleteRow=null; }
 
         function executeDelete() {
@@ -1797,13 +1957,14 @@
                 return; // Stop eksekusi agar tidak lanjut ke logika delete single
             }
 
-            const url = pendingDeleteType==='db'?`/api/database/${pendingDeleteRow}`:pendingDeleteType==='history'?`/api/history/${pendingDeleteRow}`:pendingDeleteType==='pending'?`/api/pending/${pendingDeleteRow}`:`/api/users/${pendingDeleteRow}`;
+            const url = pendingDeleteType==='db'?`/api/database/${pendingDeleteRow}`:pendingDeleteType==='history'?`/api/history/${pendingDeleteRow}`:pendingDeleteType==='pending'?`/api/pending/${pendingDeleteRow}`:pendingDeleteType==='ng-pending'?`/api/ng-pending/${pendingDeleteRow}`:`/api/users/${pendingDeleteRow}`;
             fetch(url, { method: 'DELETE' }).then(r => { if(!r.ok) return r.json().then(e=>{throw new Error(e.message||'Gagal')}); return r.json(); })
             .then(() => {
                 b.disabled = false; b.innerText = o; closeConfirmModal();
                 if(pendingDeleteType==='db'){fetchDatabase(dbCurrentPage,()=>refreshAutocomplete(()=>showLoading(false))); showToast("Terhapus","Data dihapus.","success");}
                 else if(pendingDeleteType==='history'){fetchHistory(historyCurrentPage,()=>refreshAutocomplete(()=>showLoading(false))); showToast("Terhapus","Log dihapus.","success");}
                 else if(pendingDeleteType==='pending'){fetchPending(pendingCurrentPage,()=>refreshAutocomplete(()=>showLoading(false))); showToast("Terhapus","Pending dibatalkan.","success");}
+                else if(pendingDeleteType==='ng-pending'){fetchNgPending(ngPendingCurrentPage,()=>refreshAutocomplete(()=>showLoading(false))); showToast("Terhapus","NG Pending dibatalkan.","success");}
                 else if(pendingDeleteType==='user'){loadUsers(()=>showLoading(false)); showToast("Terhapus","Akun dihapus.","success");}
             }).catch(e => { b.disabled = false; b.innerText = o; showLoading(false); closeConfirmModal(); showToast("Gagal", e.message, "error"); });
         }
@@ -1812,6 +1973,14 @@
         function approvePendingItem(rowNum) {
             if(getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return;
             pendingApproveRow = rowNum;
+            pendingApproveType = 'normal';
+            document.getElementById('approve-modal').classList.remove('hidden');
+        }
+
+        function approveNgPendingItem(rowNum) {
+            if(getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return;
+            pendingApproveRow = rowNum;
+            pendingApproveType = 'ng';
             document.getElementById('approve-modal').classList.remove('hidden');
         }
         
@@ -1833,8 +2002,9 @@
             showLoading(true, "Mengapprove Transaksi...");
 
             const payload = { approvedBy: currentUser ? currentUser.fullName : 'Admin' };
+            const endpoint = pendingApproveType === 'ng' ? `/api/ng-pending/approve/${pendingApproveRow}` : `/api/pending/approve/${pendingApproveRow}`;
 
-            fetch(`/api/pending/approve/${pendingApproveRow}`, { 
+            fetch(endpoint, { 
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -1851,9 +2021,14 @@
                 
                 fetchDatabase(dbCurrentPage);
                 fetchHistory(1);
-                fetchPending(pendingCurrentPage, () => {
-                    refreshAutocomplete(() => showLoading(false));
-                });
+                
+                if(pendingApproveType === 'normal') {
+                    fetchPending(pendingCurrentPage, () => { refreshAutocomplete(() => showLoading(false)); });
+                } else {
+                    fetchNgPending(ngPendingCurrentPage);
+                    fetchHistoryNg(1, () => { refreshAutocomplete(() => showLoading(false)); });
+                }
+                
                 loadChartOptimized();
             })
             .catch(err => {
@@ -1863,6 +2038,32 @@
                 closeApproveModal();
                 showToast("Gagal Approve", err.message, "error");
             });
+        }
+
+        function openEditNgModal(index) {
+            const item = renderedNgPendingData[index]; if (!item) return;
+            document.getElementById('ng-edit-row').value = item.rowNum; document.getElementById('ng-edit-lokasi').value = item.lokasi || ''; document.getElementById('ng-edit-model').value = item.model || '';
+            document.getElementById('ng-edit-pn').value = item.pn || ''; document.getElementById('ng-edit-odf').value = item.odf || ''; document.getElementById('ng-edit-yp').value = item.yp || 0;
+            document.getElementById('ng-edit-ys').value = item.ys || 0; document.getElementById('ng-edit-type').value = item.type || 'OUT'; document.getElementById('ng-edit-ro').value = item.noRo || '';
+            document.getElementById('modal-ng-edit').classList.remove('hidden');
+        }
+
+        function closeNgEditModal() { document.getElementById('modal-ng-edit').classList.add('hidden'); }
+
+        function saveNgEdit() {
+            if (getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return;
+            const b = document.getElementById('btn-save-ng'), o = b.innerText; b.disabled = true; b.innerText = "PROSES..."; showLoading(true, "Menyimpan...");
+            
+            fetch(`/api/ng-pending/${document.getElementById('ng-edit-row').value}`, { 
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    odf: document.getElementById('ng-edit-odf').value, yp: parseInt(document.getElementById('ng-edit-yp').value)||0, ys: parseInt(document.getElementById('ng-edit-ys').value)||0, 
+                    type: document.getElementById('ng-edit-type').value, noRo: document.getElementById('ng-edit-ro').value
+                }) 
+            })
+            .then(r => { if(!r.ok) return r.json().then(e=>{throw new Error(e.message||'Gagal')}); return r.json(); })
+            .then(() => { b.disabled = false; b.innerText = o; closeNgEditModal(); fetchNgPending(ngPendingCurrentPage, () => showLoading(false)); showToast("Sukses", "Data NG Pending diperbarui!", "success"); })
+            .catch(e => { b.disabled = false; b.innerText = o; showLoading(false); showToast("Gagal", e.message, "error"); });
         }
 
         function renderDB(data) {
@@ -1902,6 +2103,27 @@
                 </tr>
             `).join('');
             if(data.length === 0) tbody.innerHTML = `<tr><td colspan="14" class="text-center py-6 text-gray-400 font-bold">Tidak ada transaksi pending (OUT)</td></tr>`;
+        }
+
+        function renderNgPending(data) {
+            renderedNgPendingData = data; const tbody = document.getElementById('ng-pending-body');
+            tbody.innerHTML = data.map((item, index) => `
+                <tr class="hover:bg-rose-50/50 transition-colors group border-l-4 border-l-rose-400">
+                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-700 pl-4">${item.lokasi || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[110px] truncate" title="${item.model}">${item.model || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-blue-600">${item.pn || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[130px] truncate" title="${item.material}">${item.material || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-400 font-medium whitespace-nowrap text-[11px]">${item.waktu || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-blue-500">${item.yp || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-orange-500">${item.ys || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-black tracking-wider ${item.type==='IN'?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700'}">${item.type}</span></td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-700 font-bold text-[11px] max-w-[90px] truncate">${item.picker || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-bold bg-orange-100 text-orange-700">Menunggu</span></td>
+                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-center class-aksi-pending-col"><div class="flex items-center justify-center gap-1.5"><button onclick="event.stopPropagation(); approveNgPendingItem('${item.rowNum}')" class="text-emerald-600 hover:bg-emerald-100 p-1.5 rounded-lg transition-colors"><i class="fa-solid fa-check text-sm"></i></button><button onclick="event.stopPropagation(); openEditNgModal(${index})" class="text-blue-500 hover:bg-blue-100 p-1.5 rounded-lg transition-colors"><i class="fa-solid fa-pen text-sm"></i></button><button onclick="event.stopPropagation(); rejectNgPendingItem('${item.rowNum}')" class="text-rose-500 hover:bg-rose-100 p-1.5 rounded-lg transition-colors"><i class="fa-solid fa-xmark text-sm"></i></button></div></td>
+                </tr>
+            `).join('');
+            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-gray-400 font-bold">Tidak ada daftar NG Pending</td></tr>`;
+        }
+
+        function renderHistoryNg(data) {
+            renderedHistoryNgData = data; const tbody = document.getElementById('history-ng-body');
+            tbody.innerHTML = data.map((item, index) => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-700">${item.lokasi || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[110px] truncate" title="${item.model}">${item.model || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-gray-600">${item.pn || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[130px] truncate" title="${item.material}">${item.material || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-400 font-medium whitespace-nowrap text-[11px]">${item.waktu || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-gray-600">${item.yp || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-gray-600">${item.ys || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-bold ${item.type==='IN'?'bg-emerald-50 text-emerald-600':'bg-rose-50 text-rose-600'}">${item.type}</span></td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 font-medium">${item.picker || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md border border-indigo-100 text-[10px] font-bold">${item.approval || '-'}</span></td>
+                </tr>
+            `).join('');
+            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-gray-400 font-bold">Tidak ada data History NG</td></tr>`;
         }
 
         function renderBackupHistory(data) {

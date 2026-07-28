@@ -612,8 +612,19 @@ app.post('/api/pending/approve/:rowNum', async (req, res) => {
     const { data: mRow, error: errM } = await supabase.from('data_master').select('id, yp, ys').eq('pn', item.pn).eq('lokasi', item.lokasi).maybeSingle();
     if (errM || !mRow) return res.status(500).json({ success: false, message: `Item master untuk PN: ${item.pn} di Lokasi: ${item.lokasi} tidak ditemukan` });
 
-    const newYP = Math.max(0, Number(mRow.yp) - (Number(item.yp) || 0));
-    const newYS = Math.max(0, Number(mRow.ys) - (Number(item.ys) || 0));
+    const reqYP = Number(item.yp) || 0;
+    const reqYS = Number(item.ys) || 0;
+    
+    // Validasi stok master sebelum approve SC Pending (OUT)
+    if (Number(mRow.yp) < reqYP) {
+      return res.status(400).json({ success: false, message: `Stok YP di Master tidak mencukupi! (Tersedia: ${mRow.yp}, Dibutuhkan: ${reqYP})` });
+    }
+    if (Number(mRow.ys) < reqYS) {
+      return res.status(400).json({ success: false, message: `Stok YS di Master tidak mencukupi! (Tersedia: ${mRow.ys}, Dibutuhkan: ${reqYS})` });
+    }
+
+    const newYP = Number(mRow.yp) - reqYP;
+    const newYS = Number(mRow.ys) - reqYS;
     const newTotal = newYP + newYS;
 
     const { error: errUp } = await supabase.from('data_master').update({ yp: newYP, ys: newYS, total: newTotal }).eq('id', mRow.id);
@@ -632,6 +643,156 @@ app.post('/api/pending/approve/:rowNum', async (req, res) => {
     res.status(500).json({ success: false, message: 'Gagal meng-approve transaksi', error: err.message });
   }
 });
+
+
+// ==========================================
+// --- API NG PENDING & HISTORY NG ---
+// ==========================================
+
+// API READ NG PENDING LIST
+app.get('/api/ng-pending', async (req, res) => {
+  const search = req.query.search ? req.query.search.toLowerCase() : "";
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 50;
+  const offset = (page - 1) * pageSize;
+
+  try {
+    let query = supabase.from('data_ng_pending').select('*', { count: 'exact' });
+
+    if (search) {
+      query = query.or(`pn.ilike.%${search}%,model.ilike.%${search}%,lokasi.ilike.%${search}%,picker.ilike.%${search}%`);
+    }
+
+    const { data, count, error } = await query
+      .range(offset, offset + pageSize - 1)
+      .order('id', { ascending: false });
+
+    if (error) throw error;
+
+    const formattedData = data.map(d => ({ 
+      ...d, 
+      rowNum: d.id, 
+      type: d.in_out, 
+      noRo: d.no_ro,
+      waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-'
+    }));
+
+    res.json({ success: true, data: formattedData, totalPages: Math.ceil(count / pageSize), currentPage: page, totalItems: count });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// API CANCEL / DELETE NG PENDING
+app.delete('/api/ng-pending/:rowNum', async (req, res) => {
+  try {
+    const { error } = await supabase.from('data_ng_pending').delete().eq('id', req.params.rowNum);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Gagal membatalkan NG pending', error: err.message });
+  }
+});
+
+// API EDIT NG PENDING
+app.put('/api/ng-pending/:rowNum', async (req, res) => {
+  const { odf, yp, ys, type, noRo } = req.body;
+  try {
+    const { error } = await supabase
+      .from('data_ng_pending')
+      .update({ odf, yp, ys, in_out: type, no_ro: noRo })
+      .eq('id', req.params.rowNum);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Gagal update NG pending', error: err.message });
+  }
+});
+
+// API APPROVE NG PENDING
+app.post('/api/ng-pending/approve/:rowNum', async (req, res) => {
+  const rowNum = req.params.rowNum;
+  const { approvedBy } = req.body; 
+
+  try {
+    const { data: item, error: errPending } = await supabase.from('data_ng_pending').select('*').eq('id', rowNum).single();
+    if (errPending || !item) return res.status(404).json({ success: false, message: 'Data NG pending tidak ditemukan' });
+
+    const { data: mRow, error: errM } = await supabase.from('data_master').select('id, yp, ys').eq('pn', item.pn).eq('lokasi', item.lokasi).maybeSingle();
+    
+    // Sesuaikan Logic IN/OUT terhadap stok Master saat Approve NG
+    if (mRow) {
+      let newYP = Number(mRow.yp);
+      let newYS = Number(mRow.ys);
+      
+      if(item.in_out === 'OUT') {
+        const reqYP = Number(item.yp) || 0;
+        const reqYS = Number(item.ys) || 0;
+        
+        // Validasi stok master sebelum approve NG Pending (OUT)
+        if (newYP < reqYP) {
+          return res.status(400).json({ success: false, message: `Stok YP di Master tidak mencukupi! (Tersedia: ${newYP}, Dibutuhkan: ${reqYP})` });
+        }
+        if (newYS < reqYS) {
+          return res.status(400).json({ success: false, message: `Stok YS di Master tidak mencukupi! (Tersedia: ${newYS}, Dibutuhkan: ${reqYS})` });
+        }
+        
+        newYP = newYP - reqYP;
+        newYS = newYS - reqYS;
+      } else if (item.in_out === 'IN') {
+        newYP = newYP + (Number(item.yp) || 0);
+        newYS = newYS + (Number(item.ys) || 0);
+      }
+      
+      await supabase.from('data_master').update({ yp: newYP, ys: newYS, total: newYP + newYS }).eq('id', mRow.id);
+    } else {
+      if (item.in_out === 'OUT') {
+        return res.status(400).json({ success: false, message: 'Data Master tidak ditemukan untuk Lokasi dan PN ini. Approve OUT ditolak.' });
+      }
+    }
+
+    // Insert ke History SC Master
+    const { error: errHist } = await supabase.from('data_history_sc').insert([{
+        lokasi: item.lokasi, model: item.model, pn: item.pn, material: item.material, waktu: item.waktu, 
+        odf: item.odf, yp: item.yp, ys: item.ys, in_out: item.in_out, keterangan: item.keterangan, 
+        no_ro: item.no_ro, status: 'APPROVED', picker: item.picker || 'System', approval: approvedBy || 'Admin'
+    }]);
+    if (errHist) throw errHist;
+
+    // Insert ke Tabel Khusus History NG
+    const { error: errHistNg } = await supabase.from('data_history_ng').insert([{
+        lokasi: item.lokasi, model: item.model, pn: item.pn, material: item.material, waktu: item.waktu, 
+        odf: item.odf, yp: item.yp, ys: item.ys, in_out: item.in_out, keterangan: item.keterangan, 
+        no_ro: item.no_ro, picker: item.picker || 'System', approval: approvedBy || 'Admin'
+    }]);
+    if (errHistNg) throw errHistNg;
+
+    await supabase.from('data_ng_pending').delete().eq('id', rowNum);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Gagal meng-approve NG', error: err.message });
+  }
+});
+
+// API READ HISTORY NG LIST
+app.get('/api/history-ng', async (req, res) => {
+  const search = req.query.search ? req.query.search.toLowerCase() : "";
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 50;
+  const offset = (page - 1) * pageSize;
+
+  try {
+    let query = supabase.from('data_history_ng').select('*', { count: 'exact' });
+    if (search) query = query.or(`pn.ilike.%${search}%,model.ilike.%${search}%,lokasi.ilike.%${search}%,picker.ilike.%${search}%`);
+    const { data, count, error } = await query.range(offset, offset + pageSize - 1).order('id', { ascending: false });
+    if (error) throw error;
+    const formattedData = data.map(d => ({ ...d, rowNum: d.id, type: d.in_out, noRo: d.no_ro, waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-' }));
+    res.json({ success: true, data: formattedData, totalPages: Math.ceil(count / pageSize), currentPage: page, totalItems: count });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 // ==========================================
 // --- API INPUT TRANSAKSI BATCH (IN/OUT) ---
@@ -657,6 +818,16 @@ app.post('/api/transactions/batch', async (req, res) => {
       const ypVal = parseInt(item.yp) || 0;
       const ysVal = parseInt(item.ys) || 0;
       const itemPicker = item.picker || defaultPicker; 
+      
+      // LOGIC KHUSUS NG PENDING
+      if (item.keterangan === 'NG Pending') {
+        await supabase.from('data_ng_pending').insert([{
+            lokasi: item.lokasi, model: item.model, pn: item.pn, material: item.material, waktu: waktuSekarang, 
+            odf: item.odf, yp: ypVal, ys: ysVal, in_out: item.type, keterangan: item.keterangan, 
+            no_ro: item.noRo, status: 'PROSES', picker: itemPicker
+        }]);
+        continue; // Langsung ke item transaksi berikutnya (jangan jalankan logic IN/OUT standard di bawahnya)
+      }
 
       if (item.type === 'IN') {
         const { data: mRow, error: findError } = await supabase
