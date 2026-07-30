@@ -795,6 +795,237 @@ app.get('/api/history-ng', async (req, res) => {
 
 
 // ==========================================
+// --- API SHORTAGE PENDING & HISTORY SHORTAGE ---
+// ==========================================
+
+// API READ SHORTAGE PENDING LIST
+app.get('/api/shortage-pending', async (req, res) => {
+  const search = req.query.search ? req.query.search.toLowerCase() : "";
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 50;
+  const offset = (page - 1) * pageSize;
+
+  try {
+    let query = supabase.from('data_shortage_pending').select('*', { count: 'exact' });
+
+    if (search) {
+      query = query.or(`pn.ilike.%${search}%,model.ilike.%${search}%,lokasi.ilike.%${search}%,picker.ilike.%${search}%`);
+    }
+
+    const { data, count, error } = await query
+      .range(offset, offset + pageSize - 1)
+      .order('id', { ascending: false });
+
+    if (error) throw error;
+
+    const formattedData = data.map(d => ({ 
+      ...d, 
+      rowNum: d.id, 
+      type: d.in_out, 
+      noRo: d.no_ro,
+      waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-'
+    }));
+
+    res.json({ success: true, data: formattedData, totalPages: Math.ceil(count / pageSize), currentPage: page, totalItems: count });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// API CANCEL / DELETE SHORTAGE PENDING
+app.delete('/api/shortage-pending/:rowNum', async (req, res) => {
+  try {
+    const { error } = await supabase.from('data_shortage_pending').delete().eq('id', req.params.rowNum);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Gagal membatalkan Shortage pending', error: err.message });
+  }
+});
+
+// API EDIT SHORTAGE PENDING
+app.put('/api/shortage-pending/:rowNum', async (req, res) => {
+  const { odf, yp, ys, type, noRo } = req.body;
+  try {
+    const { error } = await supabase
+      .from('data_shortage_pending')
+      .update({ odf, yp, ys, in_out: type, no_ro: noRo })
+      .eq('id', req.params.rowNum);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Gagal update Shortage pending', error: err.message });
+  }
+});
+
+// API APPROVE SHORTAGE PENDING
+app.post('/api/shortage-pending/approve/:rowNum', async (req, res) => {
+  const rowNum = req.params.rowNum;
+  const { approvedBy } = req.body; 
+
+  try {
+    const { data: item, error: errPending } = await supabase.from('data_shortage_pending').select('*').eq('id', rowNum).single();
+    if (errPending || !item) return res.status(404).json({ success: false, message: 'Data Shortage pending tidak ditemukan' });
+
+    const { data: mRow, error: errM } = await supabase.from('data_master').select('id, yp, ys').eq('pn', item.pn).eq('lokasi', item.lokasi).maybeSingle();
+    
+    // Validasi stok master sebelum approve Shortage Pending
+    if (mRow) {
+      let newYP = Number(mRow.yp);
+      let newYS = Number(mRow.ys);
+      
+      if(item.in_out === 'OUT') {
+        const reqYP = Number(item.yp) || 0;
+        const reqYS = Number(item.ys) || 0;
+        
+        // Cek kecukupan stok sebelum dikurangi
+        if (newYP < reqYP) {
+          return res.status(400).json({ success: false, message: `Stok YP di Master tidak mencukupi! (Tersedia: ${newYP}, Dibutuhkan: ${reqYP})` });
+        }
+        if (newYS < reqYS) {
+          return res.status(400).json({ success: false, message: `Stok YS di Master tidak mencukupi! (Tersedia: ${newYS}, Dibutuhkan: ${reqYS})` });
+        }
+        
+        newYP -= reqYP;
+        newYS -= reqYS;
+      } else if (item.in_out === 'IN') {
+        newYP += (Number(item.yp) || 0);
+        newYS += (Number(item.ys) || 0);
+      }
+      
+      await supabase.from('data_master').update({ yp: newYP, ys: newYS, total: newYP + newYS }).eq('id', mRow.id);
+    } else {
+      // Jika data master belum ada, tidak bisa approve transaksi OUT
+      if (item.in_out === 'OUT') {
+        return res.status(400).json({ success: false, message: 'Data Master tidak ditemukan untuk Lokasi dan PN ini. Approve OUT ditolak.' });
+      }
+    }
+
+    // Insert ke History SC Master
+    const { error: errHist } = await supabase.from('data_history_sc').insert([{
+        lokasi: item.lokasi, model: item.model, pn: item.pn, material: item.material, waktu: item.waktu, 
+        odf: item.odf, yp: item.yp, ys: item.ys, in_out: item.in_out, keterangan: item.keterangan, 
+        no_ro: item.no_ro, status: 'APPROVED', picker: item.picker || 'System', approval: approvedBy || 'Admin'
+    }]);
+    if (errHist) throw errHist;
+
+    // Insert ke Tabel Khusus History Shortage
+    const { error: errHistShortage } = await supabase.from('data_history_shortage').insert([{
+        lokasi: item.lokasi, model: item.model, pn: item.pn, material: item.material, waktu: item.waktu, 
+        odf: item.odf, yp: item.yp, ys: item.ys, in_out: item.in_out, keterangan: item.keterangan, 
+        no_ro: item.no_ro, picker: item.picker || 'System', approval: approvedBy || 'Admin'
+    }]);
+    if (errHistShortage) throw errHistShortage;
+
+    await supabase.from('data_shortage_pending').delete().eq('id', rowNum);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Gagal meng-approve Shortage', error: err.message });
+  }
+});
+
+// API READ HISTORY SHORTAGE LIST
+app.get('/api/history-shortage', async (req, res) => {
+  const search = req.query.search ? req.query.search.toLowerCase() : "";
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 50;
+  const offset = (page - 1) * pageSize;
+
+  try {
+    let query = supabase.from('data_history_shortage').select('*', { count: 'exact' });
+    if (search) query = query.or(`pn.ilike.%${search}%,model.ilike.%${search}%,lokasi.ilike.%${search}%,picker.ilike.%${search}%`);
+    const { data, count, error } = await query.range(offset, offset + pageSize - 1).order('id', { ascending: false });
+    if (error) throw error;
+    const formattedData = data.map(d => ({ ...d, rowNum: d.id, type: d.in_out, noRo: d.no_ro, waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-' }));
+    res.json({ success: true, data: formattedData, totalPages: Math.ceil(count / pageSize), currentPage: page, totalItems: count });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+
+// ==========================================
+// --- API BULK ACTIONS (APPROVE & DELETE) ---
+// ==========================================
+
+// API BULK DELETE (Global untuk Pending & History)
+app.post('/api/bulk-delete', async (req, res) => {
+  const { table, ids } = req.body;
+  if (!table || !ids || !ids.length) return res.status(400).json({ success: false, message: 'Data tidak valid' });
+  try {
+      const { error } = await supabase.from(table).delete().in('id', ids);
+      if (error) throw error;
+      res.json({ success: true, message: `${ids.length} data berhasil dihapus.` });
+  } catch(err) { 
+      res.status(500).json({ success: false, message: err.message }); 
+  }
+});
+
+// API BULK APPROVE PENDING (SC, NG, Shortage)
+app.post('/api/bulk-approve', async (req, res) => {
+  const { type, ids, approvedBy } = req.body; 
+  if (!ids || !ids.length) return res.status(400).json({ success: false, message: 'Tidak ada data dipilih' });
+
+  const tablePending = type === 'ng' ? 'data_ng_pending' : type === 'shortage' ? 'data_shortage_pending' : 'data_sc_pending';
+  const tableHistory = type === 'ng' ? 'data_history_ng' : type === 'shortage' ? 'data_history_shortage' : null;
+
+  let successCount = 0; 
+  let errors = [];
+
+  for (const id of ids) {
+      try {
+          const { data: item, error: errPending } = await supabase.from(tablePending).select('*').eq('id', id).single();
+          if (errPending || !item) throw new Error(`Baris ID ${id} tidak ditemukan`);
+
+          const { data: mRow } = await supabase.from('data_master').select('id, yp, ys').eq('pn', item.pn).eq('lokasi', item.lokasi).maybeSingle();
+          
+          if (mRow) {
+              let newYP = Number(mRow.yp); let newYS = Number(mRow.ys);
+              if(item.in_out === 'OUT') {
+                  const reqYP = Number(item.yp) || 0; const reqYS = Number(item.ys) || 0;
+                  if (newYP < reqYP) throw new Error(`Stok YP di Master tidak cukup (PN: ${item.pn})`);
+                  if (newYS < reqYS) throw new Error(`Stok YS di Master tidak cukup (PN: ${item.pn})`);
+                  newYP -= reqYP; newYS -= reqYS;
+              } else if (item.in_out === 'IN') {
+                  newYP += (Number(item.yp) || 0); newYS += (Number(item.ys) || 0);
+              }
+              await supabase.from('data_master').update({ yp: newYP, ys: newYS, total: newYP + newYS }).eq('id', mRow.id);
+          } else if (item.in_out === 'OUT') {
+              throw new Error(`Data Master ${item.pn} tidak ditemukan`);
+          }
+
+          // Insert ke History SC Master
+          await supabase.from('data_history_sc').insert([{
+              lokasi: item.lokasi, model: item.model, pn: item.pn, material: item.material, waktu: item.waktu, 
+              odf: item.odf, yp: item.yp, ys: item.ys, in_out: item.in_out, keterangan: item.keterangan, 
+              no_ro: item.no_ro, status: 'APPROVED', picker: item.picker || 'System', approval: approvedBy || 'Admin'
+          }]);
+
+          // Insert ke Spesifik History
+          if (tableHistory) {
+              await supabase.from(tableHistory).insert([{
+                  lokasi: item.lokasi, model: item.model, pn: item.pn, material: item.material, waktu: item.waktu, 
+                  odf: item.odf, yp: item.yp, ys: item.ys, in_out: item.in_out, keterangan: item.keterangan, 
+                  no_ro: item.no_ro, picker: item.picker || 'System', approval: approvedBy || 'Admin'
+              }]);
+          }
+
+          await supabase.from(tablePending).delete().eq('id', id);
+          successCount++;
+      } catch(e) { 
+          errors.push(e.message); 
+      }
+  }
+
+  if (successCount === 0) {
+      res.status(400).json({ success: false, message: `Gagal semua: ${errors[0]}` });
+  } else {
+      res.json({ success: true, message: `Berhasil: ${successCount} baris. Gagal: ${errors.length} baris.` });
+  }
+});
+
+
+// ==========================================
 // --- API INPUT TRANSAKSI BATCH (IN/OUT) ---
 // ==========================================
 
@@ -827,6 +1058,13 @@ app.post('/api/transactions/batch', async (req, res) => {
             no_ro: item.noRo, status: 'PROSES', picker: itemPicker
         }]);
         continue; // Langsung ke item transaksi berikutnya (jangan jalankan logic IN/OUT standard di bawahnya)
+      } else if (item.keterangan === 'Dipakai Shortage') {
+        await supabase.from('data_shortage_pending').insert([{
+            lokasi: item.lokasi, model: item.model, pn: item.pn, material: item.material, waktu: waktuSekarang, 
+            odf: item.odf, yp: ypVal, ys: ysVal, in_out: item.type, keterangan: item.keterangan, 
+            no_ro: item.noRo, status: 'PROSES', picker: itemPicker
+        }]);
+        continue;
       }
 
       if (item.type === 'IN') {

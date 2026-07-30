@@ -315,9 +315,15 @@
             </div>
 
             <!-- Pending Tab -->
-            <div id="tab-pending" class="hidden h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
+             <div id="tab-pending" class="hidden h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
                 <div class="bg-white rounded-3xl border border-gray-100 shadow-sm flex-1 flex flex-col overflow-hidden">
                     <div class="p-3.5 sm:p-5 border-b border-gray-50 flex flex-col sm:flex-row gap-3 justify-between sm:items-center bg-gray-50/30 shrink-0">
+                        <div class="flex items-center gap-2">
+                            <div id="bulk-actions-pending" class="hidden flex items-center gap-2 mr-2">
+                                <button onclick="confirmBulkApproveTab('pending')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl font-bold text-[10px] sm:text-xs flex items-center gap-1.5 shadow-sm transition-colors"><i class="fa-solid fa-check-double"></i> Approve (<span id="count-approve-pending">0</span>)</button>
+                                <button onclick="confirmBulkDeleteTab('pending')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl font-bold text-[10px] sm:text-xs flex items-center gap-1.5 shadow-sm transition-colors"><i class="fa-solid fa-trash-can"></i> Hapus (<span id="count-delete-pending">0</span>)</button>
+                            </div>
+                        </div>
                         <div class="relative w-full sm:w-80 md:w-96">
                             <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
                             <input type="text" id="search-pending" onkeyup="handleSearchPending()" placeholder="Cari PN, Model, Lokasi..." class="w-full pl-11 pr-4 py-2.5 rounded-xl border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none text-xs sm:text-sm font-medium">
@@ -327,6 +333,7 @@
                         <table class="w-full text-left min-w-[1000px] border-collapse">
                             <thead class="text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-white border-b border-gray-100 z-10">
                                 <tr>
+                                    <th class="px-3 py-3 sm:px-4 sm:py-4 w-10 text-center class-aksi-pending-col"><input type="checkbox" id="selectAllPending" onclick="toggleAllCheckboxes('pending')" class="w-4 h-4 rounded text-blue-600 bg-gray-100 border-gray-300 cursor-pointer"></th>
                                     <th class="px-4 py-3 sm:px-6 sm:py-4">Lokasi</th>
                                     <th class="px-4 py-3 sm:px-6 sm:py-4">Model</th>
                                     <th class="px-4 py-3 sm:px-6 sm:py-4">PN</th>
@@ -354,6 +361,11 @@
             <div id="tab-history" class="hidden h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
                 <div class="bg-white rounded-3xl border border-gray-100 shadow-sm flex-1 flex flex-col overflow-hidden">
                     <div class="p-3.5 sm:p-5 border-b border-gray-50 flex flex-col sm:flex-row gap-3 justify-between sm:items-center bg-gray-50/30 shrink-0">
+                        <div class="flex items-center gap-2">
+                            <div id="bulk-actions-history" class="hidden flex items-center gap-2 mr-2">
+                                <button onclick="confirmBulkDeleteTab('history')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl font-bold text-[10px] sm:text-xs flex items-center gap-1.5 shadow-sm transition-colors"><i class="fa-solid fa-trash-can"></i> Hapus (<span id="count-delete-history">0</span>)</button>
+                            </div>
+                        </div>
                         <div class="relative w-full sm:w-80 md:w-96">
                             <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
                             <input type="text" id="search-history" onkeyup="handleSearchHistory()" placeholder="Cari PN, Model, Lokasi..." class="w-full pl-11 pr-4 py-2.5 rounded-xl border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none text-xs sm:text-sm font-medium">
@@ -363,6 +375,7 @@
                         <table class="w-full text-left min-w-[1100px] border-collapse">
                             <thead class="text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-white border-b border-gray-100 z-10">
                                 <tr>
+                                    <th class="px-3 py-3 sm:px-4 sm:py-4 w-10 text-center class-aksi-history-col"><input type="checkbox" id="selectAllHistory" onclick="toggleAllCheckboxes('history')" class="w-4 h-4 rounded text-blue-600 bg-gray-100 border-gray-300 cursor-pointer"></th>
                                     <th class="px-4 py-3 sm:px-6 sm:py-4">Lokasi</th>
                                     <th class="px-4 py-3 sm:px-6 sm:py-4">Model</th>
                                     <th class="px-4 py-3 sm:px-6 sm:py-4">PN</th>
@@ -393,6 +406,10 @@
                         <div class="flex items-center gap-2">
                             <div class="bg-rose-100 text-rose-600 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></div>
                             <h3 class="font-black text-gray-700">Daftar NG Pending</h3>
+                            <div id="bulk-actions-ng" class="hidden flex items-center gap-2 ml-2 border-l border-gray-200 pl-4">
+                                <button onclick="confirmBulkApproveTab('ng')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl font-bold text-[10px] sm:text-xs flex items-center gap-1.5 shadow-sm transition-colors"><i class="fa-solid fa-check-double"></i> Approve (<span id="count-approve-ng">0</span>)</button>
+                                <button onclick="confirmBulkDeleteTab('ng')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl font-bold text-[10px] sm:text-xs flex items-center gap-1.5 shadow-sm transition-colors"><i class="fa-solid fa-trash-can"></i> Hapus (<span id="count-delete-ng">0</span>)</button>
+                            </div>
                         </div>
                         <div class="relative w-full sm:w-80 md:w-96">
                             <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
@@ -403,6 +420,7 @@
                         <table class="w-full text-left min-w-[1000px] border-collapse">
                             <thead class="text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-white border-b border-gray-100 z-10">
                                 <tr>
+                                    <th class="px-3 py-3 sm:px-4 sm:py-4 w-10 text-center class-aksi-pending-col"><input type="checkbox" id="selectAllNg" onclick="toggleAllCheckboxes('ng')" class="w-4 h-4 rounded text-blue-600 bg-gray-100 border-gray-300 cursor-pointer"></th>
                                     <th class="px-4 py-3 sm:px-6 sm:py-4">Lokasi</th>
                                     <th class="px-4 py-3 sm:px-6 sm:py-4">Model</th>
                                     <th class="px-4 py-3 sm:px-6 sm:py-4">PN</th>
@@ -430,6 +448,9 @@
                         <div class="flex items-center gap-2">
                             <div class="bg-gray-100 text-gray-600 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></div>
                             <h3 class="font-black text-gray-700">History NG Ter-Approve</h3>
+                            <div id="bulk-actions-histng" class="hidden flex items-center gap-2 ml-2 border-l border-gray-200 pl-4">
+                                <button onclick="confirmBulkDeleteTab('histng')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl font-bold text-[10px] sm:text-xs flex items-center gap-1.5 shadow-sm transition-colors"><i class="fa-solid fa-trash-can"></i> Hapus (<span id="count-delete-histng">0</span>)</button>
+                            </div>
                         </div>
                         <div class="relative w-full sm:w-80 md:w-96">
                             <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
@@ -440,6 +461,7 @@
                         <table class="w-full text-left min-w-[1000px] border-collapse">
                             <thead class="text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-white border-b border-gray-100 z-10">
                                 <tr>
+                                    <th class="px-3 py-3 sm:px-4 sm:py-4 w-10 text-center class-aksi-history-col"><input type="checkbox" id="selectAllHistng" onclick="toggleAllCheckboxes('histng')" class="w-4 h-4 rounded text-blue-600 bg-gray-100 border-gray-300 cursor-pointer"></th>
                                     <th class="px-4 py-3 sm:px-6 sm:py-4">Lokasi</th>
                                     <th class="px-4 py-3 sm:px-6 sm:py-4">Model</th>
                                     <th class="px-4 py-3 sm:px-6 sm:py-4">PN</th>
@@ -456,6 +478,88 @@
                         </table>
                     </div>
                     <div id="history-ng-pagination" class="p-3 sm:p-4 border-t border-gray-50 bg-gray-50/30 flex items-center justify-between text-xs font-semibold text-gray-500 shrink-0"></div>
+                </div>
+            </div>
+
+            <!-- Shortage Pending Tab -->
+            <div id="tab-shortage-pending" class="hidden h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
+                <div class="bg-white rounded-3xl border border-gray-100 shadow-sm flex-1 flex flex-col overflow-hidden">
+                    <div class="p-3.5 sm:p-5 border-b border-gray-50 flex flex-col sm:flex-row gap-3 justify-between sm:items-center bg-gray-50/30 shrink-0">
+                        <div class="flex items-center gap-2">
+                            <div class="bg-orange-100 text-orange-600 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa-solid fa-boxes-stacked"></i></div>
+                            <h3 class="font-black text-gray-700">Daftar Shortage Pending</h3>
+                            <div id="bulk-actions-shortage" class="hidden flex items-center gap-2 ml-2 border-l border-gray-200 pl-4">
+                                <button onclick="confirmBulkApproveTab('shortage')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl font-bold text-[10px] sm:text-xs flex items-center gap-1.5 shadow-sm transition-colors"><i class="fa-solid fa-check-double"></i> Approve (<span id="count-approve-shortage">0</span>)</button>
+                                <button onclick="confirmBulkDeleteTab('shortage')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl font-bold text-[10px] sm:text-xs flex items-center gap-1.5 shadow-sm transition-colors"><i class="fa-solid fa-trash-can"></i> Hapus (<span id="count-delete-shortage">0</span>)</button>
+                            </div>
+                        </div>
+                        <div class="relative w-full sm:w-80 md:w-96">
+                            <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                            <input type="text" id="search-shortage-pending" onkeyup="handleSearchShortagePending()" placeholder="Cari PN, Model, Lokasi..." class="w-full pl-11 pr-4 py-2.5 rounded-xl border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none text-xs sm:text-sm font-medium">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                        <table class="w-full text-left min-w-[1000px] border-collapse">
+                            <thead class="text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-white border-b border-gray-100 z-10">
+                                <tr>
+                                    <th class="px-3 py-3 sm:px-4 sm:py-4 w-10 text-center class-aksi-pending-col"><input type="checkbox" id="selectAllShortage" onclick="toggleAllCheckboxes('shortage')" class="w-4 h-4 rounded text-blue-600 bg-gray-100 border-gray-300 cursor-pointer"></th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Lokasi</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Model</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">PN</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Material</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Waktu</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">YP</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">YS</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">IN/OUT</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Picker</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Status</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4 text-center class-aksi-pending-col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shortage-pending-body" class="divide-y divide-gray-50 text-[11px] sm:text-sm"></tbody>
+                        </table>
+                    </div>
+                    <div id="shortage-pending-pagination" class="p-3 sm:p-4 border-t border-gray-50 bg-gray-50/30 flex items-center justify-between text-xs font-semibold text-gray-500 shrink-0"></div>
+                </div>
+            </div>
+
+            <!-- History Shortage Tab -->
+            <div id="tab-history-shortage" class="hidden h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
+                <div class="bg-white rounded-3xl border border-gray-100 shadow-sm flex-1 flex flex-col overflow-hidden">
+                    <div class="p-3.5 sm:p-5 border-b border-gray-50 flex flex-col sm:flex-row gap-3 justify-between sm:items-center bg-gray-50/30 shrink-0">
+                        <div class="flex items-center gap-2">
+                            <div class="bg-gray-100 text-gray-600 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                            <h3 class="font-black text-gray-700">History Shortage</h3>
+                            <div id="bulk-actions-histshortage" class="hidden flex items-center gap-2 ml-2 border-l border-gray-200 pl-4">
+                                <button onclick="confirmBulkDeleteTab('histshortage')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl font-bold text-[10px] sm:text-xs flex items-center gap-1.5 shadow-sm transition-colors"><i class="fa-solid fa-trash-can"></i> Hapus (<span id="count-delete-histshortage">0</span>)</button>
+                            </div>
+                        </div>
+                        <div class="relative w-full sm:w-80 md:w-96">
+                            <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                            <input type="text" id="search-history-shortage" onkeyup="handleSearchHistoryShortage()" placeholder="Cari PN, Model, Lokasi..." class="w-full pl-11 pr-4 py-2.5 rounded-xl border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none text-xs sm:text-sm font-medium">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                        <table class="w-full text-left min-w-[1000px] border-collapse">
+                            <thead class="text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-white border-b border-gray-100 z-10">
+                                <tr>
+                                    <th class="px-3 py-3 sm:px-4 sm:py-4 w-10 text-center class-aksi-history-col"><input type="checkbox" id="selectAllHistshortage" onclick="toggleAllCheckboxes('histshortage')" class="w-4 h-4 rounded text-blue-600 bg-gray-100 border-gray-300 cursor-pointer"></th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Lokasi</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Model</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">PN</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Material</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Waktu</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">YP</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">YS</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">IN/OUT</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Picker</th>
+                                    <th class="px-4 py-3 sm:px-6 sm:py-4">Approval</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-shortage-body" class="divide-y divide-gray-50 text-[11px] sm:text-sm"></tbody>
+                        </table>
+                    </div>
+                    <div id="history-shortage-pagination" class="p-3 sm:p-4 border-t border-gray-50 bg-gray-50/30 flex items-center justify-between text-xs font-semibold text-gray-500 shrink-0"></div>
                 </div>
             </div>
 
@@ -1001,6 +1105,61 @@
         </div>
     </div>
 
+    <!-- Modal Edit Shortage Pending -->
+    <div id="modal-shortage-edit" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 modal-overlay animate-fade-in">
+        <div class="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl scale-in max-h-[90dvh] overflow-y-auto custom-scrollbar pb-8">
+            <h3 class="text-base sm:text-lg font-black mb-5 text-orange-500"><i class="fa-solid fa-pen-to-square"></i> Edit Transaksi Shortage Pending</h3>
+            <input type="hidden" id="shortage-edit-row">
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Lokasi</label>
+                        <input type="text" id="shortage-edit-lokasi" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 text-sm font-semibold cursor-not-allowed" readonly>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Model</label>
+                        <input type="text" id="shortage-edit-model" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 text-sm font-semibold cursor-not-allowed" readonly>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Part Number (PN)</label>
+                    <input type="text" id="shortage-edit-pn" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 font-bold text-blue-600 text-sm cursor-not-allowed" readonly>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">ODF</label>
+                        <input type="text" id="shortage-edit-odf" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">YP</label>
+                        <input type="number" id="shortage-edit-yp" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 font-bold text-blue-600 text-sm text-center">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">YS</label>
+                        <input type="number" id="shortage-edit-ys" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 font-bold text-orange-600 text-sm text-center">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">IN / OUT</label>
+                        <select id="shortage-edit-type" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 text-sm font-black">
+                            <option value="IN">IN</option>
+                            <option value="OUT">OUT</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">No. RO</label>
+                        <input type="text" id="shortage-edit-ro" class="w-full p-3 rounded-xl bg-gray-50 border-none outline-none ring-1 ring-gray-200 text-sm">
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-8">
+                <button onclick="closeShortageEditModal()" class="flex-1 py-3 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors">Batal</button>
+                <button id="btn-save-shortage" onclick="saveShortageEdit()" class="flex-[2] py-3.5 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 shadow-md transition-all text-sm">SIMPAN PERUBAHAN</button>
+            </div>
+        </div>
+    </div>
+
     <!-- SCRIPT JAVASCRIPT -->
     <script>
         let currentUser = null;
@@ -1013,6 +1172,8 @@
         let pendingCurrentPage = 1, pendingSearchQuery = "", pendingTotalPages = 1;
         let ngPendingCurrentPage = 1, ngPendingSearchQuery = "", ngPendingTotalPages = 1;
         let historyNgCurrentPage = 1, historyNgSearchQuery = "", historyNgTotalPages = 1;
+        let shortagePendingCurrentPage = 1, shortagePendingSearchQuery = "", shortagePendingTotalPages = 1;
+        let historyShortageCurrentPage = 1, historyShortageSearchQuery = "", historyShortageTotalPages = 1;
         let backupCurrentPage = 1, backupSearchQuery = "", backupTotalPages = 1;
         
         let myChart = null;
@@ -1024,6 +1185,8 @@
         let pendingApproveType = 'normal'; // 'normal' atau 'ng'
         
         let isSidebarOpen = false; 
+        let isPendingSubmenuOpen = false;
+        let isHistorySubmenuOpen = false;
         let transRows = [];
         let transRowCounter = 0;
         
@@ -1032,6 +1195,8 @@
         let renderedPendingData = [];
         let renderedNgPendingData = [];
         let renderedHistoryNgData = [];
+        let renderedShortagePendingData = [];
+        let renderedHistoryShortageData = [];
         let renderedBackupData = [];
         let renderedUsersData = [];
         let dbCsvImportPendingData = [];
@@ -1375,12 +1540,28 @@
             if (roleUpper === 'ADMIN' || roleUpper === 'SUPERADMIN' || roleUpper === 'OPERATOR') {
                 html += `
                     <button onclick="switchTab('transaksi')" id="btn-transaksi" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-right-left w-8"></i> In / Out Barang</button>
-                    <button onclick="switchTab('pending')" id="btn-pending" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-clipboard-list w-8"></i> SC Pending</button>
-                    <button onclick="switchTab('ng-pending')" id="btn-ng-pending" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-triangle-exclamation w-8"></i> NG Pending</button>
+                    <button onclick="togglePendingSubmenu()" id="btn-pending-parent" class="flex justify-between items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold">
+                        <div class="flex items-center"><i class="fa-solid fa-layer-group w-8"></i> IN/OUT Pending</div>
+                        <i id="icon-pending-chevron" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300 ${isPendingSubmenuOpen ? 'rotate-180' : ''}"></i>
+                    </button>
+                    <div id="submenu-pending" class="${isPendingSubmenuOpen ? 'flex' : 'hidden'} flex-col gap-1 mt-1 pl-4 border-l-2 border-gray-100 ml-4 mb-2 overflow-hidden">
+                        <button onclick="switchTab('pending')" id="btn-pending" class="flex items-center w-full px-4 py-2.5 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-clipboard-list w-6 text-xs"></i> SC Pending</button>
+                        <button onclick="switchTab('ng-pending')" id="btn-ng-pending" class="flex items-center w-full px-4 py-2.5 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-triangle-exclamation w-6 text-xs"></i> NG Pending</button>
+                        <button onclick="switchTab('shortage-pending')" id="btn-shortage-pending" class="flex items-center w-full px-4 py-2.5 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-boxes-stacked w-6 text-xs"></i> Shortage Pending</button>
+                    </div>
                 `;
             }
-            html += `<button onclick="switchTab('history')" id="btn-history" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-clock-rotate-left w-8"></i> History SC</button>`;
-            html += `<button onclick="switchTab('history-ng')" id="btn-history-ng" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-clock-rotate-left text-rose-500 w-8"></i> History NG</button>`;
+            html += `
+                <button onclick="toggleHistorySubmenu()" id="btn-history-parent" class="flex justify-between items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold">
+                    <div class="flex items-center"><i class="fa-solid fa-clock-rotate-left w-8"></i> History IN/OUT</div>
+                    <i id="icon-history-chevron" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300 ${isHistorySubmenuOpen ? 'rotate-180' : ''}"></i>
+                </button>
+                <div id="submenu-history" class="${isHistorySubmenuOpen ? 'flex' : 'hidden'} flex-col gap-1 mt-1 pl-4 border-l-2 border-gray-100 ml-4 mb-2 overflow-hidden">
+                    <button onclick="switchTab('history')" id="btn-history" class="flex items-center w-full px-4 py-2.5 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-clock-rotate-left w-6 text-xs"></i> History SC</button>
+                    <button onclick="switchTab('history-ng')" id="btn-history-ng" class="flex items-center w-full px-4 py-2.5 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-clock-rotate-left text-rose-500 w-6 text-xs"></i> History NG</button>
+                    <button onclick="switchTab('history-shortage')" id="btn-history-shortage" class="flex items-center w-full px-4 py-2.5 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-clock-rotate-left text-orange-500 w-6 text-xs"></i> History Shortage</button>
+                </div>
+            `;
             if (roleUpper === 'ADMIN' || roleUpper === 'SUPERADMIN' || roleUpper === 'OPERATOR') {
                 html += `<button onclick="switchTab('backup')" id="btn-backup" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-box-archive w-8"></i> Backup History 25-26</button>`;
             }
@@ -1388,6 +1569,40 @@
                 html += `<div class="my-2 border-t border-gray-50"></div><button onclick="switchTab('registrasi')" id="btn-registrasi" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-user-gear w-8"></i> Kelola Akun</button>`;
             }
             document.getElementById('sidebar-menu').innerHTML = html;
+        }
+
+        function togglePendingSubmenu() {
+            isPendingSubmenuOpen = !isPendingSubmenuOpen;
+            const submenu = document.getElementById('submenu-pending');
+            const chevron = document.getElementById('icon-pending-chevron');
+            if(submenu && chevron) {
+                if(isPendingSubmenuOpen) {
+                    submenu.classList.remove('hidden');
+                    submenu.classList.add('flex');
+                    chevron.classList.add('rotate-180');
+                } else {
+                    submenu.classList.add('hidden');
+                    submenu.classList.remove('flex');
+                    chevron.classList.remove('rotate-180');
+                }
+            }
+        }
+
+        function toggleHistorySubmenu() {
+            isHistorySubmenuOpen = !isHistorySubmenuOpen;
+            const submenu = document.getElementById('submenu-history');
+            const chevron = document.getElementById('icon-history-chevron');
+            if(submenu && chevron) {
+                if(isHistorySubmenuOpen) {
+                    submenu.classList.remove('hidden');
+                    submenu.classList.add('flex');
+                    chevron.classList.add('rotate-180');
+                } else {
+                    submenu.classList.add('hidden');
+                    submenu.classList.remove('flex');
+                    chevron.classList.remove('rotate-180');
+                }
+            }
         }
 
         function renderProfileSection() {
@@ -1418,10 +1633,27 @@
 
         function switchTab(tabId) {
             const roleUpper = getRoleUpper();
-            if (roleUpper === 'GUEST' && ['transaksi', 'backup', 'pending', 'ng-pending'].includes(tabId)) { showToast("Akses Ditolak", "Silakan login terlebih dahulu.", "error"); return switchTab('dashboard'); }
+            if (roleUpper === 'GUEST' && ['transaksi', 'backup', 'pending', 'ng-pending', 'shortage-pending'].includes(tabId)) { showToast("Akses Ditolak", "Silakan login terlebih dahulu.", "error"); return switchTab('dashboard'); }
             if (tabId === 'registrasi' && roleUpper !== 'SUPERADMIN') { showToast("Akses Ditolak", "Khusus SuperAdmin.", "error"); return switchTab('dashboard'); }
 
-            ['dashboard', 'database', 'transaksi', 'history', 'backup', 'pending', 'ng-pending', 'history-ng', 'registrasi'].forEach(id => {
+            // Buka dropdown secara otomatis jika tab child diakses
+            if (['pending', 'ng-pending', 'shortage-pending'].includes(tabId) && !isPendingSubmenuOpen) {
+                isPendingSubmenuOpen = true;
+                const submenu = document.getElementById('submenu-pending');
+                const chevron = document.getElementById('icon-pending-chevron');
+                if(submenu) { submenu.classList.remove('hidden'); submenu.classList.add('flex'); }
+                if(chevron) chevron.classList.add('rotate-180');
+            }
+            
+            if (['history', 'history-ng', 'history-shortage'].includes(tabId) && !isHistorySubmenuOpen) {
+                isHistorySubmenuOpen = true;
+                const submenu = document.getElementById('submenu-history');
+                const chevron = document.getElementById('icon-history-chevron');
+                if(submenu) { submenu.classList.remove('hidden'); submenu.classList.add('flex'); }
+                if(chevron) chevron.classList.add('rotate-180');
+            }
+
+            ['dashboard', 'database', 'transaksi', 'history', 'backup', 'pending', 'ng-pending', 'history-ng', 'registrasi', 'shortage-pending', 'history-shortage'].forEach(id => {
                 document.getElementById('tab-' + id)?.classList.add('hidden');
                 const btn = document.getElementById('btn-' + id); if (btn) { btn.classList.remove('sidebar-item-active', 'text-white'); btn.classList.add('text-gray-500'); }
             });
@@ -1429,7 +1661,31 @@
             document.getElementById('tab-' + tabId)?.classList.remove('hidden');
             const activeBtn = document.getElementById('btn-' + tabId); if (activeBtn) { activeBtn.classList.remove('text-gray-500'); activeBtn.classList.add('sidebar-item-active'); }
             
-            const titles = { 'history': 'History SC', 'backup': 'Backup History', 'pending': 'SC Pending', 'ng-pending': 'NG Pending', 'history-ng': 'History NG', 'registrasi': 'Kelola Akun' };
+            // Atur gaya status aktif untuk menu parent "IN/OUT Pending"
+            const parentBtn = document.getElementById('btn-pending-parent');
+            if (parentBtn) {
+                if (['pending', 'ng-pending', 'shortage-pending'].includes(tabId)) {
+                    parentBtn.classList.add('text-blue-700', 'bg-blue-50/70');
+                    parentBtn.classList.remove('text-gray-500');
+                } else {
+                    parentBtn.classList.remove('text-blue-700', 'bg-blue-50/70');
+                    parentBtn.classList.add('text-gray-500');
+                }
+            }
+
+            // Atur gaya status aktif untuk menu parent "History IN/OUT"
+            const historyParentBtn = document.getElementById('btn-history-parent');
+            if (historyParentBtn) {
+                if (['history', 'history-ng', 'history-shortage'].includes(tabId)) {
+                    historyParentBtn.classList.add('text-blue-700', 'bg-blue-50/70');
+                    historyParentBtn.classList.remove('text-gray-500');
+                } else {
+                    historyParentBtn.classList.remove('text-blue-700', 'bg-blue-50/70');
+                    historyParentBtn.classList.add('text-gray-500');
+                }
+            }
+
+            const titles = { 'history': 'History SC', 'backup': 'Backup History', 'pending': 'SC Pending', 'ng-pending': 'NG Pending', 'history-ng': 'History NG', 'registrasi': 'Kelola Akun', 'shortage-pending': 'Shortage Pending', 'history-shortage': 'History Shortage' };
             document.getElementById('page-title').innerText = titles[tabId] || tabId;
             if (tabId === 'registrasi') loadUsers();
             if (tabId === 'transaksi') transRows.forEach(rowId => updateRowStockInfo(rowId));
@@ -1438,11 +1694,11 @@
 
         function loadInitialData() {
             showLoading(true, "Memuat Data Warehouse...");
-            const roleUpper = getRoleUpper(); let totalSteps = roleUpper === 'GUEST' ? 5 : (roleUpper === 'SUPERADMIN' ? 9 : 8); let counter = 0;
+            const roleUpper = getRoleUpper(); let totalSteps = roleUpper === 'GUEST' ? 5 : (roleUpper === 'SUPERADMIN' ? 11 : 10); let counter = 0;
             const checkDone = () => { counter++; if (counter >= totalSteps) showLoading(false); };
 
-            refreshAutocomplete(() => checkDone()); fetchDatabase(1, () => checkDone()); fetchHistory(1, () => checkDone()); fetchHistoryNg(1, () => checkDone());
-            if (roleUpper !== 'GUEST') { fetchBackup(1, () => checkDone()); fetchPending(1, () => checkDone()); fetchNgPending(1, () => checkDone()); }
+            refreshAutocomplete(() => checkDone()); fetchDatabase(1, () => checkDone()); fetchHistory(1, () => checkDone()); fetchHistoryNg(1, () => checkDone()); fetchHistoryShortage(1, () => checkDone());
+            if (roleUpper !== 'GUEST') { fetchBackup(1, () => checkDone()); fetchPending(1, () => checkDone()); fetchNgPending(1, () => checkDone()); fetchShortagePending(1, () => checkDone()); }
             if (roleUpper === 'SUPERADMIN') loadUsers(() => checkDone());
             loadChartOptimized(() => checkDone());
         }
@@ -1552,6 +1808,27 @@
                 }).catch(() => { if (callback) callback(); });
         }
 
+        function fetchShortagePending(page, callback) {
+            if (getRoleUpper() === 'GUEST') return;
+            shortagePendingCurrentPage = page;
+            fetch(`/api/shortage-pending?search=${encodeURIComponent(shortagePendingSearchQuery)}&page=${shortagePendingCurrentPage}&pageSize=${PAGE_SIZE}`)
+                .then(r => r.json()).then(res => {
+                    shortagePendingTotalPages = res.totalPages; renderShortagePending(res.data || []);
+                    renderPagination('shortage-pending-pagination', shortagePendingCurrentPage, shortagePendingTotalPages, res.totalItems, 'fetchShortagePending');
+                    adjustInterfaceAccess(); if (callback) callback();
+                }).catch(() => { if (callback) callback(); });
+        }
+
+        function fetchHistoryShortage(page, callback) {
+            historyShortageCurrentPage = page;
+            fetch(`/api/history-shortage?search=${encodeURIComponent(historyShortageSearchQuery)}&page=${historyShortageCurrentPage}&pageSize=${PAGE_SIZE}`)
+                .then(r => r.json()).then(res => {
+                    historyShortageTotalPages = res.totalPages; renderHistoryShortage(res.data || []);
+                    renderPagination('history-shortage-pagination', historyShortageCurrentPage, historyShortageTotalPages, res.totalItems, 'fetchHistoryShortage');
+                    if (callback) callback();
+                }).catch(() => { if (callback) callback(); });
+        }
+
         function fetchBackup(page, callback) {
             if (getRoleUpper() === 'GUEST') return;
             backupCurrentPage = page;
@@ -1568,6 +1845,8 @@
         const handleSearchPending = debounce(() => { pendingSearchQuery = document.getElementById('search-pending').value; fetchPending(1); }, 300);
         const handleSearchNgPending = debounce(() => { ngPendingSearchQuery = document.getElementById('search-ng-pending').value; fetchNgPending(1); }, 300);
         const handleSearchHistoryNg = debounce(() => { historyNgSearchQuery = document.getElementById('search-history-ng').value; fetchHistoryNg(1); }, 300);
+        const handleSearchShortagePending = debounce(() => { shortagePendingSearchQuery = document.getElementById('search-shortage-pending').value; fetchShortagePending(1); }, 300);
+        const handleSearchHistoryShortage = debounce(() => { historyShortageSearchQuery = document.getElementById('search-history-shortage').value; fetchHistoryShortage(1); }, 300);
         const handleSearchBackup = debounce(() => { if(getRoleUpper()!=='GUEST'){backupSearchQuery = document.getElementById('search-backup').value; fetchBackup(1);} }, 300);
 
         function renderPagination(containerId, currentPage, totalPages, totalItems, functionName) {
@@ -1740,8 +2019,8 @@
             const type = document.getElementById(`type-${rowId}`); if (!type || type.value !== 'OUT') return;
             
             const ketSelect = document.getElementById(`ket-${rowId}`);
-            // Mengabaikan limitasi validasi stok apabila "Keterangan" bernilai "NG Pending"
-            if (ketSelect && ketSelect.value === 'NG Pending') return; 
+            // Mengabaikan limitasi validasi stok apabila "Keterangan" bernilai "NG Pending" atau "Dipakai Shortage"
+            if (ketSelect && (ketSelect.value === 'NG Pending' || ketSelect.value === 'Dipakai Shortage')) return; 
 
             const pnIn = document.getElementById(`pn-${rowId}`), lokSel = document.getElementById(`lokasi-${rowId}`), ypIn = document.getElementById(`yp-${rowId}`), ysIn = document.getElementById(`ys-${rowId}`);
             if (!pnIn || !lokSel || !ypIn || !ysIn) return;
@@ -1758,7 +2037,7 @@
                 
                 // Pastikan penggunaan NG Pending baris lain juga tidak dihitung sebagai pengurang stok sementara
                 const oKet = document.getElementById(`ket-${otherId}`)?.value;
-                if (oKet === 'NG Pending') continue; 
+                if (oKet === 'NG Pending' || oKet === 'Dipakai Shortage') continue; 
                 
                 const oPn = document.getElementById(`pn-${otherId}`)?.value.trim(), oLok = document.getElementById(`lokasi-${otherId}`)?.value;
                 if (oPn && oLok && oPn.toLowerCase() === pnVal.toLowerCase() && oLok.toLowerCase() === lokVal.toLowerCase()) {
@@ -1808,8 +2087,8 @@
                 if (!lok) { validationError = `Baris #${i+1}: Pilih lokasi!`; break; }
                 if (yp===0 && ys===0) { validationError = `Baris #${i+1}: Masukkan Qty!`; break; }
                 
-                // Pengecekan hanya untuk yang selain "NG Pending" saat tipe-nya "OUT"
-                if (type === "OUT" && ket !== 'NG Pending') {
+                // Pengecekan hanya untuk yang selain "NG Pending" dan "Dipakai Shortage" saat tipe-nya "OUT"
+                if (type === "OUT" && ket !== 'NG Pending' && ket !== 'Dipakai Shortage') {
                     const match = autocompleteCache.find(x => String(x.lokasi).trim().toLowerCase() === lok.trim().toLowerCase() && isRowMatch(x, pn));
                     const availYP = match && match.available_yp !== undefined ? match.available_yp : (match?parseInt(match.yp)||0:0);
                     const availYS = match && match.available_ys !== undefined ? match.available_ys : (match?parseInt(match.ys)||0:0);
@@ -1830,7 +2109,7 @@
             .then(res => { if(!res.ok) return res.json().then(e => { throw new Error(e.message||'Gagal') }); return res.json(); })
             .then(() => {
                 btn.disabled = false; btn.innerText = oriTxt; showToast("Sukses", `${itemsToSave.length} Transaksi diproses!`, "success"); resetBatchTransForm();
-                fetchDatabase(dbCurrentPage); fetchHistory(1); fetchPending(1); fetchNgPending(1); loadChartOptimized(); refreshAutocomplete(() => showLoading(false));
+                fetchDatabase(dbCurrentPage); fetchHistory(1); fetchPending(1); fetchNgPending(1); fetchShortagePending(1); loadChartOptimized(); refreshAutocomplete(() => showLoading(false));
             }).catch(e => { btn.disabled = false; btn.innerText = oriTxt; showLoading(false); showToast("Gagal Menyimpan", e.message, "error"); });
         }
 
@@ -1932,11 +2211,13 @@
         function deleteHistoryItem(r) { if(getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return; pendingDeleteRow=r; pendingDeleteType='history'; document.getElementById('confirm-modal-desc').innerText="Hapus log History?"; document.getElementById('confirm-modal').classList.remove('hidden'); }
         function rejectPendingItem(r) { if(getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return; pendingDeleteRow=r; pendingDeleteType='pending'; document.getElementById('confirm-modal-desc').innerText="Hapus transaksi Pending?"; document.getElementById('confirm-modal').classList.remove('hidden'); }
         function rejectNgPendingItem(r) { if(getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return; pendingDeleteRow=r; pendingDeleteType='ng-pending'; document.getElementById('confirm-modal-desc').innerText="Hapus transaksi NG Pending?"; document.getElementById('confirm-modal').classList.remove('hidden'); }
+        function rejectShortagePendingItem(r) { if(getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return; pendingDeleteRow=r; pendingDeleteType='shortage-pending'; document.getElementById('confirm-modal-desc').innerText="Hapus transaksi Shortage Pending?"; document.getElementById('confirm-modal').classList.remove('hidden'); }
         function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('hidden'); pendingDeleteRow=null; }
 
         function executeDelete() {
             if(!pendingDeleteRow) return; const b = document.getElementById('confirm-delete-btn'), o = b.innerText; b.disabled = true; b.innerText = "Proses..."; showLoading(true, "Mengeksekusi...");
             
+            // LOGIKA HAPUS BANYAK LOKASI DI MASTER
             if (pendingDeleteType === 'bulk-lokasi') {
                 fetch('/api/database/bulk', {
                     method: 'DELETE',
@@ -1954,10 +2235,38 @@
                         });
                     });
                 }).catch(e => { b.disabled = false; b.innerText = o; showLoading(false); closeConfirmModal(); showToast("Gagal", e.message, "error"); });
-                return; // Stop eksekusi agar tidak lanjut ke logika delete single
+                return; 
             }
 
-            const url = pendingDeleteType==='db'?`/api/database/${pendingDeleteRow}`:pendingDeleteType==='history'?`/api/history/${pendingDeleteRow}`:pendingDeleteType==='pending'?`/api/pending/${pendingDeleteRow}`:pendingDeleteType==='ng-pending'?`/api/ng-pending/${pendingDeleteRow}`:`/api/users/${pendingDeleteRow}`;
+            // LOGIKA HAPUS BANYAK DI PENDING & HISTORY TAB
+            if (String(pendingDeleteType).startsWith('bulk-')) {
+                let table = '';
+                const type = pendingDeleteType.split('-')[1]; // pending, ng, shortage, history, histng, histshortage
+                if(type === 'pending') table = 'data_sc_pending';
+                else if(type === 'ng') table = 'data_ng_pending';
+                else if(type === 'shortage') table = 'data_shortage_pending';
+                else if(type === 'history') table = 'data_history_sc';
+                else if(type === 'histng') table = 'data_history_ng';
+                else if(type === 'histshortage') table = 'data_history_shortage';
+
+                fetch('/api/bulk-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table, ids: pendingDeleteRow }) })
+                .then(r => r.json()).then(res => {
+                    b.disabled = false; b.innerText = o; closeConfirmModal(); 
+                    showToast("Hasil Hapus", res.message, res.success ? "success" : "error");
+                    
+                    fetchDatabase(dbCurrentPage); loadChartOptimized();
+                    if(type === 'pending') fetchPending(pendingCurrentPage);
+                    else if(type === 'ng') fetchNgPending(ngPendingCurrentPage);
+                    else if(type === 'shortage') fetchShortagePending(shortagePendingCurrentPage);
+                    else if(type === 'history') fetchHistory(historyCurrentPage);
+                    else if(type === 'histng') fetchHistoryNg(historyNgCurrentPage);
+                    else if(type === 'histshortage') fetchHistoryShortage(historyShortageCurrentPage);
+                    updateBulkActionUI(type); refreshAutocomplete(() => showLoading(false));
+                }).catch(e => { b.disabled = false; b.innerText = o; closeConfirmModal(); showLoading(false); showToast("Error", e.message, "error"); });
+                return;
+            }
+
+            const url = pendingDeleteType==='db'?`/api/database/${pendingDeleteRow}`:pendingDeleteType==='history'?`/api/history/${pendingDeleteRow}`:pendingDeleteType==='pending'?`/api/pending/${pendingDeleteRow}`:pendingDeleteType==='ng-pending'?`/api/ng-pending/${pendingDeleteRow}`:pendingDeleteType==='shortage-pending'?`/api/shortage-pending/${pendingDeleteRow}`:`/api/users/${pendingDeleteRow}`;
             fetch(url, { method: 'DELETE' }).then(r => { if(!r.ok) return r.json().then(e=>{throw new Error(e.message||'Gagal')}); return r.json(); })
             .then(() => {
                 b.disabled = false; b.innerText = o; closeConfirmModal();
@@ -1965,6 +2274,7 @@
                 else if(pendingDeleteType==='history'){fetchHistory(historyCurrentPage,()=>refreshAutocomplete(()=>showLoading(false))); showToast("Terhapus","Log dihapus.","success");}
                 else if(pendingDeleteType==='pending'){fetchPending(pendingCurrentPage,()=>refreshAutocomplete(()=>showLoading(false))); showToast("Terhapus","Pending dibatalkan.","success");}
                 else if(pendingDeleteType==='ng-pending'){fetchNgPending(ngPendingCurrentPage,()=>refreshAutocomplete(()=>showLoading(false))); showToast("Terhapus","NG Pending dibatalkan.","success");}
+                else if(pendingDeleteType==='shortage-pending'){fetchShortagePending(shortagePendingCurrentPage,()=>refreshAutocomplete(()=>showLoading(false))); showToast("Terhapus","Shortage Pending dibatalkan.","success");}
                 else if(pendingDeleteType==='user'){loadUsers(()=>showLoading(false)); showToast("Terhapus","Akun dihapus.","success");}
             }).catch(e => { b.disabled = false; b.innerText = o; showLoading(false); closeConfirmModal(); showToast("Gagal", e.message, "error"); });
         }
@@ -1981,6 +2291,13 @@
             if(getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return;
             pendingApproveRow = rowNum;
             pendingApproveType = 'ng';
+            document.getElementById('approve-modal').classList.remove('hidden');
+        }
+
+        function approveShortagePendingItem(rowNum) {
+            if(getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return;
+            pendingApproveRow = rowNum;
+            pendingApproveType = 'shortage';
             document.getElementById('approve-modal').classList.remove('hidden');
         }
         
@@ -2001,8 +2318,28 @@
             btn.innerText = "Proses...";
             showLoading(true, "Mengapprove Transaksi...");
 
+            // LOGIKA APPROVE BANYAK
+            if (String(pendingApproveType).startsWith('bulk-')) {
+                const type = pendingApproveType.split('-')[1]; // pending, ng, shortage
+                const payload = { type: type === 'pending' ? 'sc' : type, ids: pendingApproveRow, approvedBy: currentUser ? currentUser.fullName : 'Admin' };
+                
+                fetch('/api/bulk-approve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                .then(res => res.json()).then(res => {
+                    btn.disabled = false; btn.innerText = originalText; closeApproveModal(); 
+                    showToast("Hasil Approve", res.message, res.success ? "success" : "error");
+                    
+                    fetchDatabase(dbCurrentPage); fetchHistory(1); loadChartOptimized();
+                    if(type === 'pending') fetchPending(pendingCurrentPage, () => refreshAutocomplete(() => showLoading(false)));
+                    else if(type === 'ng') { fetchNgPending(ngPendingCurrentPage); fetchHistoryNg(1, () => refreshAutocomplete(() => showLoading(false))); }
+                    else if(type === 'shortage') { fetchShortagePending(shortagePendingCurrentPage); fetchHistoryShortage(1, () => refreshAutocomplete(() => showLoading(false))); }
+                    
+                    updateBulkActionUI(type); 
+                }).catch(e => { btn.disabled = false; btn.innerText = originalText; showLoading(false); closeApproveModal(); showToast("Error", e.message, "error"); });
+                return;
+            }
+
             const payload = { approvedBy: currentUser ? currentUser.fullName : 'Admin' };
-            const endpoint = pendingApproveType === 'ng' ? `/api/ng-pending/approve/${pendingApproveRow}` : `/api/pending/approve/${pendingApproveRow}`;
+            const endpoint = pendingApproveType === 'ng' ? `/api/ng-pending/approve/${pendingApproveRow}` : pendingApproveType === 'shortage' ? `/api/shortage-pending/approve/${pendingApproveRow}` : `/api/pending/approve/${pendingApproveRow}`;
 
             fetch(endpoint, { 
                 method: 'POST',
@@ -2024,9 +2361,12 @@
                 
                 if(pendingApproveType === 'normal') {
                     fetchPending(pendingCurrentPage, () => { refreshAutocomplete(() => showLoading(false)); });
-                } else {
+                } else if (pendingApproveType === 'ng') {
                     fetchNgPending(ngPendingCurrentPage);
                     fetchHistoryNg(1, () => { refreshAutocomplete(() => showLoading(false)); });
+                } else if (pendingApproveType === 'shortage') {
+                    fetchShortagePending(shortagePendingCurrentPage);
+                    fetchHistoryShortage(1, () => { refreshAutocomplete(() => showLoading(false)); });
                 }
                 
                 loadChartOptimized();
@@ -2066,6 +2406,32 @@
             .catch(e => { b.disabled = false; b.innerText = o; showLoading(false); showToast("Gagal", e.message, "error"); });
         }
 
+        function openEditShortageModal(index) {
+            const item = renderedShortagePendingData[index]; if (!item) return;
+            document.getElementById('shortage-edit-row').value = item.rowNum; document.getElementById('shortage-edit-lokasi').value = item.lokasi || ''; document.getElementById('shortage-edit-model').value = item.model || '';
+            document.getElementById('shortage-edit-pn').value = item.pn || ''; document.getElementById('shortage-edit-odf').value = item.odf || ''; document.getElementById('shortage-edit-yp').value = item.yp || 0;
+            document.getElementById('shortage-edit-ys').value = item.ys || 0; document.getElementById('shortage-edit-type').value = item.type || 'OUT'; document.getElementById('shortage-edit-ro').value = item.noRo || '';
+            document.getElementById('modal-shortage-edit').classList.remove('hidden');
+        }
+
+        function closeShortageEditModal() { document.getElementById('modal-shortage-edit').classList.add('hidden'); }
+
+        function saveShortageEdit() {
+            if (getRoleUpper() === 'GUEST' || getRoleUpper() === 'OPERATOR') return;
+            const b = document.getElementById('btn-save-shortage'), o = b.innerText; b.disabled = true; b.innerText = "PROSES..."; showLoading(true, "Menyimpan...");
+            
+            fetch(`/api/shortage-pending/${document.getElementById('shortage-edit-row').value}`, { 
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    odf: document.getElementById('shortage-edit-odf').value, yp: parseInt(document.getElementById('shortage-edit-yp').value)||0, ys: parseInt(document.getElementById('shortage-edit-ys').value)||0, 
+                    type: document.getElementById('shortage-edit-type').value, noRo: document.getElementById('shortage-edit-ro').value
+                }) 
+            })
+            .then(r => { if(!r.ok) return r.json().then(e=>{throw new Error(e.message||'Gagal')}); return r.json(); })
+            .then(() => { b.disabled = false; b.innerText = o; closeShortageEditModal(); fetchShortagePending(shortagePendingCurrentPage, () => showLoading(false)); showToast("Sukses", "Data Shortage Pending diperbarui!", "success"); })
+            .catch(e => { b.disabled = false; b.innerText = o; showLoading(false); showToast("Gagal", e.message, "error"); });
+        }
+
         function renderDB(data) {
             renderedDbData = data; const tbody = document.getElementById('db-body');
             tbody.innerHTML = data.map((item, index) => `
@@ -2087,43 +2453,76 @@
             renderedHistoryData = data; const tbody = document.getElementById('history-body');
             tbody.innerHTML = data.map((item, index) => `
                 <tr class="hover:bg-gray-50 transition-colors group cursor-pointer" onclick="showDetailTrans(event, 'history', ${index})">
+                    <td class="px-3 py-2.5 sm:px-4 sm:py-4 text-center class-aksi-history-col" onclick="event.stopPropagation()"><input type="checkbox" class="cb-history w-4 h-4 rounded text-blue-600 bg-gray-100 border-gray-300 cursor-pointer" value="${item.rowNum}" onclick="updateBulkActionUI('history')"></td>
                     <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-700">${item.lokasi || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[110px] truncate" title="${item.model}">${item.model || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-blue-600">${item.pn || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[130px] truncate" title="${item.material}">${item.material || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-400 font-medium whitespace-nowrap text-[11px]">${item.waktu || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-600 font-medium">${item.odf || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-blue-500">${item.yp || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-orange-500">${item.ys || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-black tracking-wider ${item.type === 'IN' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${item.type}</span></td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-600 max-w-[110px] truncate" title="${item.keterangan}">${item.keterangan || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 font-medium">${item.noRo || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-700 font-bold text-[11px] max-w-[90px] truncate" title="${item.picker || '-'}">${item.picker || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-indigo-700 font-bold text-[11px] max-w-[90px] truncate" title="${item.approval || '-'}">${item.approval ? `<span class="bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 text-[10px]">${item.approval}</span>` : '-'}</td>
                     <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-center class-aksi-history-col"><div class="flex items-center justify-center gap-2"><button onclick="event.stopPropagation(); openHistoryModal(${index})" class="text-blue-500 hover:bg-blue-100 p-2 rounded-lg transition-colors"><i class="fa-solid fa-pen text-sm"></i></button><button onclick="event.stopPropagation(); deleteHistoryItem('${item.rowNum}')" class="text-rose-500 hover:bg-rose-100 p-2 rounded-lg transition-colors"><i class="fa-solid fa-trash-can text-sm"></i></button></div></td>
                 </tr>
             `).join('');
-            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="14" class="text-center py-6 text-gray-400 font-bold">Tidak ada history transaksi</td></tr>`;
+            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="15" class="text-center py-6 text-gray-400 font-bold">Tidak ada history transaksi</td></tr>`;
+            updateBulkActionUI('history');
         }
 
         function renderPending(data) {
             renderedPendingData = data; const tbody = document.getElementById('pending-body');
             tbody.innerHTML = data.map((item, index) => `
                 <tr class="hover:bg-orange-50/50 transition-colors group border-l-4 border-l-orange-400 cursor-pointer" onclick="showDetailTrans(event, 'pending', ${index})">
+                    <td class="px-3 py-2.5 sm:px-4 sm:py-4 text-center class-aksi-pending-col" onclick="event.stopPropagation()"><input type="checkbox" class="cb-pending w-4 h-4 rounded text-blue-600 bg-gray-100 border-gray-300 cursor-pointer" value="${item.rowNum}" onclick="updateBulkActionUI('pending')"></td>
                     <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-700 pl-4">${item.lokasi || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[110px] truncate" title="${item.model}">${item.model || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-blue-600">${item.pn || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[130px] truncate" title="${item.material}">${item.material || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-400 font-medium whitespace-nowrap text-[11px]">${item.waktu || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-600 font-medium">${item.odf || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-blue-500">${item.yp || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-orange-500">${item.ys || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-black tracking-wider bg-rose-100 text-rose-700">${item.type}</span></td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-600 max-w-[110px] truncate" title="${item.keterangan}">${item.keterangan || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 font-medium">${item.noRo || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-700 font-bold text-[11px] max-w-[90px] truncate" title="${item.picker || '-'}">${item.picker || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-bold bg-orange-100 text-orange-700"><i class="fa-solid fa-clock text-[10px]"></i> Pending</span></td>
                     <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-center class-aksi-pending-col"><div class="flex items-center justify-center gap-2"><button onclick="event.stopPropagation(); approvePendingItem('${item.rowNum}')" class="text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition-colors font-bold text-[10px] tracking-wide shadow-sm"><i class="fa-solid fa-check mr-1"></i> OK</button><button onclick="event.stopPropagation(); rejectPendingItem('${item.rowNum}')" class="text-rose-500 hover:bg-rose-100 p-1.5 rounded-lg transition-colors"><i class="fa-solid fa-xmark text-sm"></i></button></div></td>
                 </tr>
             `).join('');
-            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="14" class="text-center py-6 text-gray-400 font-bold">Tidak ada transaksi pending (OUT)</td></tr>`;
+            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="15" class="text-center py-6 text-gray-400 font-bold">Tidak ada transaksi pending (OUT)</td></tr>`;
+            updateBulkActionUI('pending');
         }
 
         function renderNgPending(data) {
             renderedNgPendingData = data; const tbody = document.getElementById('ng-pending-body');
             tbody.innerHTML = data.map((item, index) => `
                 <tr class="hover:bg-rose-50/50 transition-colors group border-l-4 border-l-rose-400">
+                    <td class="px-3 py-2.5 sm:px-4 sm:py-4 text-center class-aksi-pending-col" onclick="event.stopPropagation()"><input type="checkbox" class="cb-ng w-4 h-4 rounded text-blue-600 bg-gray-100 border-gray-300 cursor-pointer" value="${item.rowNum}" onclick="updateBulkActionUI('ng')"></td>
                     <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-700 pl-4">${item.lokasi || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[110px] truncate" title="${item.model}">${item.model || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-blue-600">${item.pn || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[130px] truncate" title="${item.material}">${item.material || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-400 font-medium whitespace-nowrap text-[11px]">${item.waktu || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-blue-500">${item.yp || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-orange-500">${item.ys || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-black tracking-wider ${item.type==='IN'?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700'}">${item.type}</span></td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-700 font-bold text-[11px] max-w-[90px] truncate">${item.picker || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-bold bg-orange-100 text-orange-700">Menunggu</span></td>
                     <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-center class-aksi-pending-col"><div class="flex items-center justify-center gap-1.5"><button onclick="event.stopPropagation(); approveNgPendingItem('${item.rowNum}')" class="text-emerald-600 hover:bg-emerald-100 p-1.5 rounded-lg transition-colors"><i class="fa-solid fa-check text-sm"></i></button><button onclick="event.stopPropagation(); openEditNgModal(${index})" class="text-blue-500 hover:bg-blue-100 p-1.5 rounded-lg transition-colors"><i class="fa-solid fa-pen text-sm"></i></button><button onclick="event.stopPropagation(); rejectNgPendingItem('${item.rowNum}')" class="text-rose-500 hover:bg-rose-100 p-1.5 rounded-lg transition-colors"><i class="fa-solid fa-xmark text-sm"></i></button></div></td>
                 </tr>
             `).join('');
-            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-gray-400 font-bold">Tidak ada daftar NG Pending</td></tr>`;
+            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="12" class="text-center py-6 text-gray-400 font-bold">Tidak ada daftar NG Pending</td></tr>`;
+            updateBulkActionUI('ng');
         }
 
         function renderHistoryNg(data) {
             renderedHistoryNgData = data; const tbody = document.getElementById('history-ng-body');
             tbody.innerHTML = data.map((item, index) => `
                 <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-3 py-2.5 sm:px-4 sm:py-4 text-center class-aksi-history-col" onclick="event.stopPropagation()"><input type="checkbox" class="cb-histng w-4 h-4 rounded text-blue-600 bg-gray-100 border-gray-300 cursor-pointer" value="${item.rowNum}" onclick="updateBulkActionUI('histng')"></td>
                     <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-700">${item.lokasi || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[110px] truncate" title="${item.model}">${item.model || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-gray-600">${item.pn || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[130px] truncate" title="${item.material}">${item.material || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-400 font-medium whitespace-nowrap text-[11px]">${item.waktu || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-gray-600">${item.yp || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-gray-600">${item.ys || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-bold ${item.type==='IN'?'bg-emerald-50 text-emerald-600':'bg-rose-50 text-rose-600'}">${item.type}</span></td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 font-medium">${item.picker || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md border border-indigo-100 text-[10px] font-bold">${item.approval || '-'}</span></td>
                 </tr>
             `).join('');
-            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-gray-400 font-bold">Tidak ada data History NG</td></tr>`;
+            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-gray-400 font-bold">Tidak ada data History NG</td></tr>`;
+            updateBulkActionUI('histng');
+        }
+
+        function renderShortagePending(data) {
+            renderedShortagePendingData = data; const tbody = document.getElementById('shortage-pending-body');
+            tbody.innerHTML = data.map((item, index) => `
+                <tr class="hover:bg-orange-50/50 transition-colors group border-l-4 border-l-orange-400">
+                    <td class="px-3 py-2.5 sm:px-4 sm:py-4 text-center class-aksi-pending-col" onclick="event.stopPropagation()"><input type="checkbox" class="cb-shortage w-4 h-4 rounded text-blue-600 bg-gray-100 border-gray-300 cursor-pointer" value="${item.rowNum}" onclick="updateBulkActionUI('shortage')"></td>
+                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-700 pl-4">${item.lokasi || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[110px] truncate" title="${item.model}">${item.model || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-blue-600">${item.pn || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[130px] truncate" title="${item.material}">${item.material || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-400 font-medium whitespace-nowrap text-[11px]">${item.waktu || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-blue-500">${item.yp || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-extrabold text-orange-500">${item.ys || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-black tracking-wider ${item.type==='IN'?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700'}">${item.type}</span></td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-700 font-bold text-[11px] max-w-[90px] truncate">${item.picker || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-bold bg-orange-100 text-orange-700">Menunggu</span></td>
+                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 text-center class-aksi-pending-col"><div class="flex items-center justify-center gap-1.5"><button onclick="event.stopPropagation(); approveShortagePendingItem('${item.rowNum}')" class="text-emerald-600 hover:bg-emerald-100 p-1.5 rounded-lg transition-colors"><i class="fa-solid fa-check text-sm"></i></button><button onclick="event.stopPropagation(); openEditShortageModal(${index})" class="text-blue-500 hover:bg-blue-100 p-1.5 rounded-lg transition-colors"><i class="fa-solid fa-pen text-sm"></i></button><button onclick="event.stopPropagation(); rejectShortagePendingItem('${item.rowNum}')" class="text-rose-500 hover:bg-rose-100 p-1.5 rounded-lg transition-colors"><i class="fa-solid fa-xmark text-sm"></i></button></div></td>
+                </tr>
+            `).join('');
+            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="12" class="text-center py-6 text-gray-400 font-bold">Tidak ada daftar Shortage Pending</td></tr>`;
+            updateBulkActionUI('shortage');
+        }
+
+        function renderHistoryShortage(data) {
+            renderedHistoryShortageData = data; const tbody = document.getElementById('history-shortage-body');
+            tbody.innerHTML = data.map((item, index) => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-3 py-2.5 sm:px-4 sm:py-4 text-center class-aksi-history-col" onclick="event.stopPropagation()"><input type="checkbox" class="cb-histshortage w-4 h-4 rounded text-blue-600 bg-gray-100 border-gray-300 cursor-pointer" value="${item.rowNum}" onclick="updateBulkActionUI('histshortage')"></td>
+                    <td class="px-4 py-2.5 sm:px-6 sm:py-4 font-semibold text-gray-700">${item.lokasi || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[110px] truncate" title="${item.model}">${item.model || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-gray-600">${item.pn || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 max-w-[130px] truncate" title="${item.material}">${item.material || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-400 font-medium whitespace-nowrap text-[11px]">${item.waktu || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-gray-600">${item.yp || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4 font-bold text-gray-600">${item.ys || 0}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="px-2 py-1 rounded-md text-[10px] font-bold ${item.type==='IN'?'bg-emerald-50 text-emerald-600':'bg-rose-50 text-rose-600'}">${item.type}</span></td><td class="px-4 py-2.5 sm:px-6 sm:py-4 text-gray-500 font-medium">${item.picker || '-'}</td><td class="px-4 py-2.5 sm:px-6 sm:py-4"><span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md border border-indigo-100 text-[10px] font-bold">${item.approval || '-'}</span></td>
+                </tr>
+            `).join('');
+            if(data.length === 0) tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-gray-400 font-bold">Tidak ada data History Shortage</td></tr>`;
+            updateBulkActionUI('histshortage');
         }
 
         function renderBackupHistory(data) {
@@ -2146,6 +2545,60 @@
                 document.body.appendChild(link); link.click(); document.body.removeChild(link); showLoading(false); showToast("Sukses", "File CSV berhasil diunduh.", "success");
             }).catch(() => { showLoading(false); showToast("Export Gagal", "Terjadi kesalahan.", "error"); });
         }
+        
+        // --- LOGIKA BULK ACTION UI (CHECKBOX) ---
+        function toggleAllCheckboxes(type) {
+            const selectAll = document.getElementById(`selectAll${type.charAt(0).toUpperCase() + type.slice(1)}`);
+            const checkboxes = document.querySelectorAll(`.cb-${type}`);
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            updateBulkActionUI(type);
+        }
+
+        function updateBulkActionUI(type) {
+            const checkboxes = document.querySelectorAll(`.cb-${type}:checked`);
+            const allCheckboxes = document.querySelectorAll(`.cb-${type}`);
+            const selectAll = document.getElementById(`selectAll${type.charAt(0).toUpperCase() + type.slice(1)}`);
+            
+            if (selectAll) selectAll.checked = checkboxes.length === allCheckboxes.length && allCheckboxes.length > 0;
+
+            const bulkContainer = document.getElementById(`bulk-actions-${type}`);
+            const countApprove = document.getElementById(`count-approve-${type}`);
+            const countDelete = document.getElementById(`count-delete-${type}`);
+
+            if (bulkContainer) {
+                if (checkboxes.length > 0) {
+                    bulkContainer.classList.remove('hidden');
+                    if (countApprove) countApprove.innerText = checkboxes.length;
+                    if (countDelete) countDelete.innerText = checkboxes.length;
+                } else {
+                    bulkContainer.classList.add('hidden');
+                }
+            }
+        }
+
+        function confirmBulkApproveTab(type) {
+            const checkboxes = document.querySelectorAll(`.cb-${type}:checked`);
+            const ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
+            if (ids.length === 0) return;
+            
+            pendingApproveType = 'bulk-' + type;
+            pendingApproveRow = ids; // Menyimpan array ID
+            
+            document.getElementById('approve-modal').classList.remove('hidden');
+        }
+
+        function confirmBulkDeleteTab(type) {
+            const checkboxes = document.querySelectorAll(`.cb-${type}:checked`);
+            const ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
+            if (ids.length === 0) return;
+            
+            pendingDeleteType = 'bulk-' + type;
+            pendingDeleteRow = ids; // Menyimpan array ID
+            
+            document.getElementById('confirm-modal-desc').innerText = `Hapus secara permanen ${ids.length} data yang dipilih?`;
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
     </script>
 </body>
 </html>
