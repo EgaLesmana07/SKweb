@@ -1162,7 +1162,15 @@ app.post('/api/transactions/batch', async (req, res) => {
 
 app.get('/api/chart-summary', async (req, res) => {
   try {
-    const { data, error } = await supabase.from('data_history_sc').select('keterangan');
+    const { startDate, endDate, pn, noRo } = req.query;
+    let query = supabase.from('data_history_sc').select('keterangan');
+
+    if (startDate) query = query.gte('waktu', startDate + 'T00:00:00.000Z');
+    if (endDate) query = query.lte('waktu', endDate + 'T23:59:59.999Z');
+    if (pn) query = query.ilike('pn', `%${pn}%`);
+    if (noRo) query = query.ilike('no_ro', `%${noRo}%`);
+
+    const { data, error } = await query;
     if (error) throw error;
     
     const summary = {};
@@ -1176,12 +1184,32 @@ app.get('/api/chart-summary', async (req, res) => {
 });
 
 app.get('/api/drilldown', async (req, res) => {
-  const keterangan = req.query.keterangan;
+  const { keterangan, startDate, endDate, pn, noRo } = req.query;
   try {
-    const { data: logsRows, error: errLogs } = await supabase.from('data_history_sc').select('lokasi, model, pn, material, waktu, yp, ys').eq('keterangan', keterangan).order('id', { ascending: false }).limit(30);
+    let logsQuery = supabase.from('data_history_sc').select('lokasi, model, pn, material, waktu, yp, ys').eq('keterangan', keterangan).order('id', { ascending: false }).limit(30);
+    let groupQuery = supabase.from('data_history_sc').select('material, yp, ys').eq('keterangan', keterangan);
+
+    if (startDate) {
+        logsQuery = logsQuery.gte('waktu', startDate + 'T00:00:00.000Z');
+        groupQuery = groupQuery.gte('waktu', startDate + 'T00:00:00.000Z');
+    }
+    if (endDate) {
+        logsQuery = logsQuery.lte('waktu', endDate + 'T23:59:59.999Z');
+        groupQuery = groupQuery.lte('waktu', endDate + 'T23:59:59.999Z');
+    }
+    if (pn) {
+        logsQuery = logsQuery.ilike('pn', `%${pn}%`);
+        groupQuery = groupQuery.ilike('pn', `%${pn}%`);
+    }
+    if (noRo) {
+        logsQuery = logsQuery.ilike('no_ro', `%${noRo}%`);
+        groupQuery = groupQuery.ilike('no_ro', `%${noRo}%`);
+    }
+
+    const { data: logsRows, error: errLogs } = await logsQuery;
     if (errLogs) throw errLogs;
 
-    const { data: allGroupData, error: errGroup } = await supabase.from('data_history_sc').select('material, yp, ys').eq('keterangan', keterangan);
+    const { data: allGroupData, error: errGroup } = await groupQuery;
     if (errGroup) throw errGroup;
 
     const materialGroups = {};
