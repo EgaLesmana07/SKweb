@@ -1229,9 +1229,9 @@ app.get('/api/drilldown', async (req, res) => {
 
 app.get('/api/item-history', async (req, res) => {
   try {
-    const { data, error } = await supabase.from('data_history_sc').select('waktu, in_out, yp, ys, keterangan, no_ro').eq('pn', req.query.pn).eq('lokasi', req.query.lokasi).order('id', { ascending: false }).limit(20);
+    const { data, error } = await supabase.from('data_history_sc').select('waktu, in_out, yp, ys, keterangan, no_ro, odf').eq('pn', req.query.pn).eq('lokasi', req.query.lokasi).order('id', { ascending: false }).limit(100);
     if (error) throw error;
-    const formatted = (data || []).map(d => ({ waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : '-', type: d.in_out, yp: d.yp, ys: d.ys, keterangan: d.keterangan, noRo: d.no_ro }));
+    const formatted = (data || []).map(d => ({ waktu: d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : '-', type: d.in_out, yp: d.yp, ys: d.ys, keterangan: d.keterangan, noRo: d.no_ro, odf: d.odf }));
     res.json(formatted);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

@@ -1194,6 +1194,78 @@
             </div>
         </div>
     </div>
+     <!-- Modal QR Code / Barcode -->
+    <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-70 hidden flex-col items-center justify-center z-50 transition-opacity">
+        <div class="bg-[#0f172a] text-white p-6 rounded-xl border border-slate-700 shadow-2xl w-11/12 max-w-sm text-center relative">
+            <button onclick="closeQrModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h3 class="text-lg font-bold mb-1">QR Code / Barcode</h3>
+            <p class="text-sm text-blue-400 font-semibold mb-4" id="qrModelText"></p>
+            
+            <div class="bg-white p-4 rounded-lg inline-block mb-4 shadow-inner">
+                <!-- Gambar QR Code akan dirender disini menggunakan API gratis -->
+                <img id="qrImage" src="" alt="QR Code" class="w-48 h-48 object-contain">
+            </div>
+            
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Scan QR Code ini menggunakan Kamera HP atau Barcode Scanner untuk langsung membuka halaman model ini.
+            </p>
+        </div>
+    </div>
+    <!-- Modal Kartu Stok (Khusus Brand) -->
+    <div id="modal-kartu-stok" class="hidden fixed inset-0 z-[180] flex items-center justify-center p-4 modal-overlay animate-fade-in">
+        <div class="bg-black w-full max-w-5xl rounded-2xl p-6 shadow-2xl scale-in max-h-[90dvh] flex flex-col relative overflow-hidden border border-gray-800">
+            <button onclick="closeKartuStokModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10 bg-gray-900 rounded-full w-8 h-8 flex items-center justify-center border border-gray-700">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="text-center mb-6 border-b border-gray-800 pb-4">
+                <h2 class="text-xl font-bold text-white underline underline-offset-4 mb-2">Kartu Stok Material</h2>
+                <p class="text-xs text-gray-400 text-right w-full font-mono">NO. DOC : FR-GAS-WH-002-02 Rev.02</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 mb-4 text-sm text-white font-bold">
+                <div class="flex"><span class="w-32 inline-block text-gray-300">Model</span><span class="mr-2">:</span><span id="ks-model">-</span></div>
+                <div class="flex md:justify-end"><span id="ks-lokasi" class="bg-blue-900 text-blue-200 px-3 py-1 rounded text-xs border border-blue-700">Lokasi: -</span></div>
+                <div class="flex"><span class="w-32 inline-block text-gray-300">PN</span><span class="mr-2">:</span><span id="ks-pn">-</span></div>
+                <div class="flex"><span class="w-32 inline-block text-gray-300">Nama Material</span><span class="mr-2">:</span><span id="ks-material">-</span></div>
+            </div>
+
+            <div class="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar border border-gray-700 rounded-lg">
+                <table class="w-full text-center min-w-[900px] border-collapse bg-black text-white text-xs">
+                    <thead class="sticky top-0 bg-black z-10">
+                        <tr>
+                            <th class="border border-gray-700 px-3 py-3 w-32" rowspan="2">Tanggal</th>
+                            <th class="border border-gray-700 px-3 py-3 w-40" rowspan="2">Order /<br>Contract Number</th>
+                            <th class="border border-gray-700 px-3 py-3 w-24" rowspan="2">LOT</th>
+                            <th class="border border-gray-700 px-3 py-2" colspan="3">Jumlah</th>
+                            <th class="border border-gray-700 px-3 py-3 w-20" rowspan="2">PCS<br>CTN</th>
+                            <th class="border border-gray-700 px-3 py-3" rowspan="2">Keterangan</th>
+                            <th class="border border-gray-700 px-3 py-3 w-36" rowspan="2">No INT/RO/<br>SHORTAGE</th>
+                        </tr>
+                        <tr>
+                            <th class="border border-gray-700 px-3 py-2 w-20 bg-gray-900">Masuk</th>
+                            <th class="border border-gray-700 px-3 py-2 w-20 bg-gray-900">Keluar</th>
+                            <th class="border border-gray-700 px-3 py-2 w-24 bg-gray-900">Total Stok</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ks-body" class="divide-y divide-gray-800">
+                        <!-- Content injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-5 pt-4 border-t border-gray-800 flex justify-end gap-3 shrink-0">
+                <button onclick="exportKartuStokCSV()" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded-lg text-sm transition-colors shadow-lg flex items-center gap-2">
+                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                </button>
+                <button onclick="closeKartuStokModal()" class="px-5 py-2.5 bg-gray-200 hover:bg-white text-black font-bold rounded-lg text-sm transition-colors">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- SCRIPT JAVASCRIPT -->
     <script>
@@ -1224,6 +1296,12 @@
         let isSidebarOpen = false; 
         let isPendingSubmenuOpen = false;
         let isHistorySubmenuOpen = false;
+        let isBrandSubmenuOpen = false;
+        
+        let currentBrand = '';
+        let currentBrandModel = '';
+        let currentBrandSearch = '';
+
         let transRows = [];
         let transRowCounter = 0;
         
@@ -1575,13 +1653,36 @@
             if (roleUpper === 'SUPERADMIN') badgeClass = "bg-purple-100 text-purple-700 font-extrabold text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider inline-block mt-0.5";
             if (roleUpper === 'OPERATOR') badgeClass = "bg-emerald-100 text-emerald-700 font-extrabold text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider inline-block mt-0.5";
             const badge = document.getElementById('user-role-badge'); badge.innerText = currentRole; badge.className = badgeClass;
-            adjustInterfaceAccess(); loadInitialData(); switchTab('dashboard');
+            adjustInterfaceAccess(); loadInitialData(); 
+            restoreLastTab();
         }
 
         function applyGuestSession() {
             currentUser = null; isLoggedIn = false; currentRole = 'Guest'; renderSidebarMenu(); renderProfileSection();
             const badge = document.getElementById('user-role-badge'); badge.innerText = 'Guest'; badge.className = "bg-gray-100 text-gray-500 font-extrabold text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider inline-block mt-0.5";
-            adjustInterfaceAccess(); loadInitialData(); switchTab('dashboard');
+            adjustInterfaceAccess(); loadInitialData(); 
+            restoreLastTab();
+        }
+
+        function restoreLastTab() {
+            let savedTab = localStorage.getItem('sk_active_tab') || 'dashboard';
+            const roleUpper = getRoleUpper();
+
+            // Pengecekan otorisasi agar jika yang login Guest/Operator tidak bisa bypass ke tab terlarang
+            if (roleUpper === 'GUEST' && ['transaksi', 'backup', 'pending', 'ng-pending', 'shortage-pending', 'registrasi'].includes(savedTab)) {
+                savedTab = 'dashboard';
+            }
+            if (savedTab === 'registrasi' && roleUpper !== 'SUPERADMIN') {
+                savedTab = 'dashboard';
+            }
+
+            // Restore jika tab terakhir adalah Brand
+            if (savedTab === 'brand') {
+                const savedBrand = localStorage.getItem('sk_active_brand') || 'Hisense';
+                switchBrand(savedBrand);
+            } else {
+                switchTab(savedTab);
+            }
         }
 
         function renderSidebarMenu() {
@@ -1590,6 +1691,21 @@
                 <button onclick="switchTab('dashboard')" id="btn-dashboard" class="sidebar-item-active flex items-center w-full px-4 py-3 rounded-xl text-left transition-all duration-200 text-sm font-semibold text-white"><i class="fa-solid fa-chart-line w-8"></i> Dashboard</button>
                 <button onclick="switchTab('database')" id="btn-database" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-database w-8"></i> Database</button>
             `;
+            
+            // MENU BRAND
+            html += `
+                <button onclick="toggleBrandSubmenu()" id="btn-brand-parent" class="flex justify-between items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold">
+                    <div class="flex items-center"><i class="fa-solid fa-tags w-8"></i> Brand</div>
+                    <i id="icon-brand-chevron" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300 ${isBrandSubmenuOpen ? 'rotate-180' : ''}"></i>
+                </button>
+                <div id="submenu-brand" class="${isBrandSubmenuOpen ? 'flex' : 'hidden'} flex-col gap-1 mt-1 pl-4 border-l-2 border-gray-100 ml-4 mb-2 overflow-hidden">
+                    <button onclick="switchBrand('Hisense')" id="btn-brand-Hisense" class="flex items-center w-full px-4 py-2.5 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-desktop w-6 text-xs"></i> Hisense</button>
+                    <button onclick="switchBrand('Toshiba')" id="btn-brand-Toshiba" class="flex items-center w-full px-4 py-2.5 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-desktop w-6 text-xs"></i> Toshiba</button>
+                    <button onclick="switchBrand('TCL')" id="btn-brand-TCL" class="flex items-center w-full px-4 py-2.5 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-desktop w-6 text-xs"></i> TCL</button>
+                    <button onclick="switchBrand('IFPD')" id="btn-brand-IFPD" class="flex items-center w-full px-4 py-2.5 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold relative"><i class="fa-solid fa-desktop w-6 text-xs"></i> IFPD</button>
+                </div>
+            `;
+
             if (roleUpper === 'ADMIN' || roleUpper === 'SUPERADMIN' || roleUpper === 'OPERATOR') {
                 html += `
                     <button onclick="switchTab('transaksi')" id="btn-transaksi" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-right-left w-8"></i> In / Out Barang</button>
@@ -1622,6 +1738,20 @@
                 html += `<div class="my-2 border-t border-gray-50"></div><button onclick="switchTab('registrasi')" id="btn-registrasi" class="flex items-center w-full px-4 py-3 rounded-xl text-left text-gray-500 hover:bg-gray-50 transition-all duration-200 text-sm font-semibold"><i class="fa-solid fa-user-gear w-8"></i> Kelola Akun</button>`;
             }
             document.getElementById('sidebar-menu').innerHTML = html;
+            
+            // Pertahankan status active pada menu brand jika sedang dibuka
+            if (currentBrand) {
+                const activeBtn = document.getElementById('btn-brand-' + currentBrand);
+                const parentBtn = document.getElementById('btn-brand-parent');
+                if (activeBtn) {
+                    activeBtn.classList.remove('text-gray-500', 'hover:bg-gray-50');
+                    activeBtn.classList.add('bg-blue-50', 'text-blue-600', 'font-bold');
+                }
+                if (parentBtn) {
+                    parentBtn.classList.add('text-blue-700', 'bg-blue-50/70');
+                    parentBtn.classList.remove('text-gray-500');
+                }
+            }
         }
 
         function togglePendingSubmenu() {
@@ -1641,12 +1771,12 @@
             }
         }
 
-        function toggleHistorySubmenu() {
-            isHistorySubmenuOpen = !isHistorySubmenuOpen;
-            const submenu = document.getElementById('submenu-history');
-            const chevron = document.getElementById('icon-history-chevron');
+        function toggleBrandSubmenu() {
+            isBrandSubmenuOpen = !isBrandSubmenuOpen;
+            const submenu = document.getElementById('submenu-brand');
+            const chevron = document.getElementById('icon-brand-chevron');
             if(submenu && chevron) {
-                if(isHistorySubmenuOpen) {
+                if(isBrandSubmenuOpen) {
                     submenu.classList.remove('hidden');
                     submenu.classList.add('flex');
                     chevron.classList.add('rotate-180');
@@ -1681,7 +1811,14 @@
 
         function handleLogout() {
             showLoading(true, "Keluar dari sesi...");
-            setTimeout(() => { document.getElementById('login-form')?.reset(); localStorage.removeItem('sk_user_session'); applyGuestSession(); showToast("Sesi Berakhir", "Anda sekarang masuk sebagai Guest.", "info"); }, 600);
+            setTimeout(() => { 
+                document.getElementById('login-form')?.reset(); 
+                localStorage.removeItem('sk_user_session'); 
+                localStorage.removeItem('sk_active_tab'); 
+                localStorage.removeItem('sk_active_brand'); 
+                applyGuestSession(); 
+                showToast("Sesi Berakhir", "Anda sekarang masuk sebagai Guest.", "info"); 
+            }, 600);
         }
 
         function switchTab(tabId) {
@@ -1706,7 +1843,18 @@
                 if(chevron) chevron.classList.add('rotate-180');
             }
 
-            ['dashboard', 'database', 'transaksi', 'history', 'backup', 'pending', 'ng-pending', 'history-ng', 'registrasi', 'shortage-pending', 'history-shortage'].forEach(id => {
+            // Hapus status active dari tab Brand jika pindah ke tab lain
+            if (tabId !== 'brand') {
+                currentBrand = '';
+                ['Hisense', 'Toshiba', 'TCL', 'IFPD'].forEach(br => {
+                    const b = document.getElementById('btn-brand-' + br);
+                    if (b) { b.classList.add('text-gray-500', 'hover:bg-gray-50'); b.classList.remove('bg-blue-50', 'text-blue-600', 'font-bold'); }
+                });
+                const bp = document.getElementById('btn-brand-parent');
+                if (bp) { bp.classList.remove('text-blue-700', 'bg-blue-50/70'); bp.classList.add('text-gray-500'); }
+            }
+
+            ['dashboard', 'database', 'transaksi', 'history', 'backup', 'pending', 'ng-pending', 'history-ng', 'registrasi', 'shortage-pending', 'history-shortage', 'brand'].forEach(id => {
                 document.getElementById('tab-' + id)?.classList.add('hidden');
                 const btn = document.getElementById('btn-' + id); if (btn) { btn.classList.remove('sidebar-item-active', 'text-white'); btn.classList.add('text-gray-500'); }
             });
@@ -1738,11 +1886,14 @@
                 }
             }
 
-            const titles = { 'history': 'History SC', 'backup': 'Backup History', 'pending': 'SC Pending', 'ng-pending': 'NG Pending', 'history-ng': 'History NG', 'registrasi': 'Kelola Akun', 'shortage-pending': 'Shortage Pending', 'history-shortage': 'History Shortage' };
+            const titles = { 'history': 'History SC', 'backup': 'Backup History', 'pending': 'SC Pending', 'ng-pending': 'NG Pending', 'history-ng': 'History NG', 'registrasi': 'Kelola Akun', 'shortage-pending': 'Shortage Pending', 'history-shortage': 'History Shortage', 'brand': `BRAND: ${currentBrand.toUpperCase()}` };
             document.getElementById('page-title').innerText = titles[tabId] || tabId;
             if (tabId === 'registrasi') loadUsers();
             if (tabId === 'transaksi') transRows.forEach(rowId => updateRowStockInfo(rowId));
             if (window.innerWidth < 768 && isSidebarOpen) toggleSidebar();
+            
+            // Simpan posisi tab saat ini ke Local Storage
+            localStorage.setItem('sk_active_tab', tabId);
         }
 
         function loadInitialData() {
@@ -1901,6 +2052,421 @@
         const handleSearchShortagePending = debounce(() => { shortagePendingSearchQuery = document.getElementById('search-shortage-pending').value; fetchShortagePending(1); }, 300);
         const handleSearchHistoryShortage = debounce(() => { historyShortageSearchQuery = document.getElementById('search-history-shortage').value; fetchHistoryShortage(1); }, 300);
         const handleSearchBackup = debounce(() => { if(getRoleUpper()!=='GUEST'){backupSearchQuery = document.getElementById('search-backup').value; fetchBackup(1);} }, 300);
+
+        // ==========================================
+        // FITUR BRAND (HISENSE, TOSHIBA, TCL, IFPD)
+        // ==========================================
+
+        function checkBrandLocation(lokasiStr, brandName) {
+            if (!lokasiStr) return false;
+            const loks = lokasiStr.split(',').map(l => l.trim().toUpperCase());
+            let prefix = "";
+            if (brandName === 'Hisense') prefix = 'HSE';
+            else if (brandName === 'Toshiba') prefix = 'TSB';
+            else if (brandName === 'TCL') prefix = 'TCL';
+            else if (brandName === 'IFPD') prefix = 'IFPD';
+            
+            for (let l of loks) {
+                if (l.startsWith(prefix)) {
+                    const numStr = l.replace(prefix, '');
+                    const num = parseInt(numStr);
+                    // Mengecek apakah sisa string adalah angka dan rentang 1 - 200
+                    if (!isNaN(num) && num >= 1 && num <= 200 && numStr === num.toString()) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function switchBrand(brandName) {
+            currentBrand = brandName;
+            currentBrandModel = '';
+            currentBrandSearch = '';
+            
+            // Simpan posisi brand yang sedang dibuka ke Local Storage
+            localStorage.setItem('sk_active_brand', brandName);
+            
+            // Cek jika tab tab-brand belum ada, maka inject HTML-nya ke main container
+            if (!document.getElementById('tab-brand')) {
+                const brandHtml = `
+                <div id="tab-brand" class="hidden h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
+                    <div class="bg-white rounded-3xl border border-gray-100 shadow-sm flex-1 flex flex-col overflow-hidden p-6 relative">
+                        
+                        <!-- View 1: Card List Models -->
+                        <div id="brand-view-models" class="flex flex-col h-full">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-gray-100 pb-4 shrink-0">
+                                <div>
+                                    <h3 class="text-base sm:text-xl font-black text-gray-800 flex items-center gap-2">
+                                        <i class="fa-solid fa-desktop text-blue-600"></i> <span id="brand-header-title">DAFTAR MODEL BRAND: HISENSE</span>
+                                    </h3>
+                                    <p class="text-xs text-gray-500 mt-1">Pilih model untuk melihat rincian material.</p>
+                                </div>
+                                <div class="relative w-full sm:w-72">
+                                    <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" id="brand-search-model" onkeyup="handleBrandSearch()" placeholder="Cari Model..." class="w-full pl-11 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm shadow-sm transition-all">
+                                </div>
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar pr-2">
+                                <div id="brand-models-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-4">
+                                    <!-- Cards injected here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- View 2: Table Detail Model -->
+                        <div id="brand-view-detail" class="hidden flex flex-col h-full">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-gray-100 pb-4 shrink-0">
+                                <div class="flex items-center gap-3 w-full sm:w-auto">
+                                    <button onclick="backToBrandModels()" class="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors shrink-0">
+                                        <i class="fa-solid fa-arrow-left"></i>
+                                    </button>
+                                    <div class="min-w-0">
+                                        <h3 class="text-base sm:text-xl font-black text-gray-800 flex items-center gap-2 truncate">
+                                            <i class="fa-solid fa-desktop text-blue-600"></i> MODEL: <span id="brand-detail-model-name" class="truncate">32A4200G</span>
+                                        </h3>
+                                        <p class="text-xs text-gray-500 mt-1 truncate">Daftar part/material untuk model ini. Klik Kartu Stok untuk melihat lembar kerja.</p>
+                                    </div>
+                                </div>
+                                <div class="relative w-full sm:w-72 shrink-0">
+                                    <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" id="brand-search-material" onkeyup="renderBrandTable()" placeholder="Cari PN / Deskripsi..." class="w-full pl-11 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm shadow-sm transition-all">
+                                </div>
+                            </div>
+                            <div class="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar">
+                                <table class="w-full text-left min-w-[900px] border-collapse">
+                                    <thead class="text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-white border-b border-gray-100 z-10">
+                                        <tr>
+                                            <th class="px-5 py-4">Part Number (PN)</th>
+                                            <th class="px-5 py-4">Deskripsi Material</th>
+                                            <th class="px-5 py-4">Lokasi</th>
+                                            <th class="px-5 py-4 text-center">YP</th>
+                                            <th class="px-5 py-4 text-center">YS</th>
+                                            <th class="px-5 py-4 text-center">Total</th>
+                                            <th class="px-5 py-4 text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="brand-detail-tbody" class="divide-y divide-gray-50 text-xs sm:text-sm">
+                                        <!-- Table rows injected here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                `;
+                document.querySelector('main > div.flex-1').insertAdjacentHTML('beforeend', brandHtml);
+            }
+
+            // Update UI State for Sidebar Menu
+            ['Hisense', 'Toshiba', 'TCL', 'IFPD'].forEach(br => {
+                const b = document.getElementById('btn-brand-' + br);
+                if (b) { b.classList.add('text-gray-500', 'hover:bg-gray-50'); b.classList.remove('bg-blue-50', 'text-blue-600', 'font-bold'); }
+            });
+            const activeBtn = document.getElementById('btn-brand-' + currentBrand);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-gray-500', 'hover:bg-gray-50');
+                activeBtn.classList.add('bg-blue-50', 'text-blue-600', 'font-bold');
+            }
+            const bp = document.getElementById('btn-brand-parent');
+            if (bp) { bp.classList.add('text-blue-700', 'bg-blue-50/70'); bp.classList.remove('text-gray-500'); }
+
+            document.getElementById('brand-header-title').innerText = `DAFTAR MODEL BRAND: ${currentBrand.toUpperCase()}`;
+            document.getElementById('brand-search-model').value = '';
+            
+            backToBrandModels(); // Show View 1
+            switchTab('brand');
+            
+            // Pastikan data autocomplete terbaru tersedia, lalu render
+            if (autocompleteCache.length === 0) {
+                showLoading(true, "Memuat data brand...");
+                refreshAutocomplete(() => {
+                    showLoading(false);
+                    renderBrandCards();
+                });
+            } else {
+                renderBrandCards();
+            }
+        }
+
+        const handleBrandSearch = debounce(() => {
+            currentBrandSearch = document.getElementById('brand-search-model').value.toLowerCase();
+            renderBrandCards();
+        }, 300);
+
+        function renderBrandCards() {
+            const grid = document.getElementById('brand-models-grid');
+            grid.innerHTML = '';
+            
+            // 1. Filter by Brand Location Rules
+            let brandItems = autocompleteCache.filter(item => checkBrandLocation(item.lokasi, currentBrand));
+            
+            // 2. Group by Model
+            const modelGroups = {};
+            brandItems.forEach(item => {
+                const mod = item.model || 'TANPA MODEL';
+                if (!modelGroups[mod]) modelGroups[mod] = [];
+                modelGroups[mod].push(item);
+            });
+
+            // 3. Convert to array and filter by search
+            let modelsArray = Object.keys(modelGroups).map(mod => {
+                return { name: mod, count: modelGroups[mod].length };
+            });
+
+            if (currentBrandSearch) {
+                modelsArray = modelsArray.filter(m => m.name.toLowerCase().includes(currentBrandSearch));
+            }
+
+            // 4. Sort Alphabetically
+            modelsArray.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+
+            if (modelsArray.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-10 text-gray-400 font-bold flex flex-col items-center"><i class="fa-solid fa-box-open text-4xl mb-3 text-gray-300"></i> Tidak ada model ditemukan untuk brand ${currentBrand}.</div>`;
+                return;
+            }
+
+            // 5. Render Cards (Mirip Gambar 1)
+            let html = '';
+            modelsArray.forEach(m => {
+                html += `
+                    <div onclick="openBrandModelDetail('${m.name.replace(/'/g, "\\'")}')" class="bg-white border border-gray-200 hover:border-blue-400 rounded-2xl p-4 cursor-pointer transition-all flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md relative h-36 group">
+                        <span class="absolute top-2 right-3 text-[9px] font-bold text-blue-600">${m.count} Item</span>
+                        <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-desktop"></i>
+                        </div>
+                        <h4 class="font-black text-gray-800 text-sm truncate w-full px-2" title="${m.name}">${m.name}</h4>
+                    </div>
+                `;
+            });
+            grid.innerHTML = html;
+        }
+
+        function backToBrandModels() {
+            document.getElementById('brand-view-detail').classList.add('hidden');
+            document.getElementById('brand-view-models').classList.remove('hidden');
+            document.getElementById('brand-search-material').value = '';
+        }
+
+        function openBrandModelDetail(modelName) {
+            currentBrandModel = modelName;
+            document.getElementById('brand-detail-model-name').innerText = modelName.toUpperCase();
+            document.getElementById('brand-view-models').classList.add('hidden');
+            document.getElementById('brand-view-detail').classList.remove('hidden');
+            renderBrandTable();
+        }
+
+        function renderBrandTable() {
+            const tbody = document.getElementById('brand-detail-tbody');
+            const searchVal = document.getElementById('brand-search-material').value.toLowerCase();
+            
+            // 1. Filter by Brand Location and Exact Model
+            let items = autocompleteCache.filter(item => 
+                checkBrandLocation(item.lokasi, currentBrand) && 
+                (item.model || 'TANPA MODEL') === currentBrandModel
+            );
+
+            // 2. Filter by search input (PN or Description)
+            if (searchVal) {
+                items = items.filter(item => 
+                    (item.pn && item.pn.toLowerCase().includes(searchVal)) || 
+                    (item.description && item.description.toLowerCase().includes(searchVal))
+                );
+            }
+
+            // 3. Sort by PN
+            items.sort((a, b) => (a.pn || '').localeCompare((b.pn || ''), undefined, { numeric: true, sensitivity: 'base' }));
+
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-gray-400 font-bold">Tidak ada material yang cocok.</td></tr>`;
+                return;
+            }
+
+            // 4. Render Table Rows (Mirip Gambar 2)
+            let html = '';
+            items.forEach(item => {
+                const yp = parseInt(item.yp) || 0;
+                const ys = parseInt(item.ys) || 0;
+                const total = yp + ys;
+                
+                // Escape values for function arguments
+                const safePn = (item.pn || '').replace(/'/g, "\\'");
+                const safeLokasi = (item.lokasi || '').replace(/'/g, "\\'");
+                const safeModel = (item.model || '').replace(/'/g, "\\'");
+                const safeDesc = (item.description || '').replace(/'/g, "\\'");
+
+                html += `
+                    <tr class="hover:bg-blue-50/30 transition-colors border-b border-gray-100">
+                        <td class="px-5 py-4 font-black text-blue-600">${item.pn || '-'}</td>
+                        <td class="px-5 py-4 font-semibold text-gray-700">${item.description || '-'}</td>
+                        <td class="px-5 py-4 text-gray-600 font-medium">${item.lokasi || '-'}</td>
+                        <td class="px-5 py-4 text-center font-bold text-blue-600">${yp}</td>
+                        <td class="px-5 py-4 text-center font-bold text-orange-500">${ys}</td>
+                        <td class="px-5 py-4 text-center font-black text-emerald-600">${total}</td>
+                        <td class="px-5 py-4 text-center">
+                            <button onclick="openKartuStok('${safePn}', '${safeLokasi}', '${safeModel}', '${safeDesc}')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg font-bold text-[11px] flex items-center justify-center gap-1.5 transition-colors mx-auto whitespace-nowrap">
+                                <i class="fa-solid fa-file-invoice text-xs"></i> Kartu Stok
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // ==========================================
+        // FITUR POPUP KARTU STOK (MODAL DARK)
+        // ==========================================
+        
+        let currentKartuStokData = [];
+        let currentKartuStokInfo = {};
+
+        function openKartuStok(pn, lokasi, model, material) {
+            document.getElementById('ks-model').innerText = model || '-';
+            document.getElementById('ks-pn').innerText = pn || '-';
+            document.getElementById('ks-lokasi').innerText = `Lokasi: ${lokasi || '-'}`;
+            document.getElementById('ks-material').innerText = material || '-';
+            
+            currentKartuStokInfo = { pn, lokasi, model, material };
+            currentKartuStokData = [];
+            
+            const tbody = document.getElementById('ks-body');
+            tbody.innerHTML = `<tr><td colspan="9" class="py-10 text-gray-500"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br>Memuat history kartu stok...</td></tr>`;
+            
+            document.getElementById('modal-kartu-stok').classList.remove('hidden');
+
+            // Ambil total stok dari autocompleteCache sebagai basis "Total Stok saat ini"
+            const masterItem = autocompleteCache.find(x => x.pn === pn && (x.lokasi || '').includes(lokasi));
+            let currentTotalMaster = masterItem ? (parseInt(masterItem.yp) || 0) + (parseInt(masterItem.ys) || 0) : 0;
+
+            // Fetch History
+            fetch(`/api/item-history?pn=${encodeURIComponent(pn)}&lokasi=${encodeURIComponent(lokasi)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                            <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                            <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                            <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                            <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                            <td class="border border-gray-800 px-3 py-2 font-bold text-white">${currentTotalMaster}</td>
+                            <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                            <td class="border border-gray-800 px-3 py-2 text-emerald-500 font-bold">INITIAL STOCK / STOK AWAL</td>
+                            <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                currentKartuStokData = data;
+                
+                // 1. Hitung stok awal terlebih dahulu dengan meloop dari yang terbaru mundur ke yang terlama
+                let initialStock = currentTotalMaster;
+                data.forEach(item => {
+                    const inQty = item.type === 'IN' ? (parseInt(item.yp) || 0) + (parseInt(item.ys) || 0) : 0;
+                    const outQty = item.type === 'OUT' ? (parseInt(item.yp) || 0) + (parseInt(item.ys) || 0) : 0;
+                    if (item.type === 'IN') {
+                        initialStock -= inQty;
+                    } else if (item.type === 'OUT') {
+                        initialStock += outQty;
+                    }
+                });
+
+                // 2. Render baris INITIAL STOCK di paling atas
+                let html = `
+                    <tr class="bg-gray-900/50">
+                        <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                        <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                        <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                        <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                        <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                        <td class="border border-gray-800 px-3 py-2 font-bold text-white">${initialStock}</td>
+                        <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                        <td class="border border-gray-800 px-3 py-2 text-emerald-500 font-bold tracking-wide">INITIAL STOCK / STOK AWAL</td>
+                        <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                    </tr>
+                `;
+
+                let currentRunningStock = initialStock;
+
+                // 3. Render data transaksi secara kronologis (dari yang terlama ke terbaru ke bawah) dengan membalik array
+                const chronologicalData = [...data].reverse();
+                chronologicalData.forEach(item => {
+                    const inQty = item.type === 'IN' ? (parseInt(item.yp) || 0) + (parseInt(item.ys) || 0) : 0;
+                    const outQty = item.type === 'OUT' ? (parseInt(item.yp) || 0) + (parseInt(item.ys) || 0) : 0;
+                    
+                    // Kalkulasi stok setelah transaksi ini terjadi
+                    if (item.type === 'IN') {
+                        currentRunningStock += inQty;
+                    } else if (item.type === 'OUT') {
+                        currentRunningStock -= outQty;
+                    }
+
+                    // Render baris transaksi
+                    html += `
+                        <tr class="hover:bg-gray-900 transition-colors">
+                            <td class="border border-gray-800 px-3 py-2 font-medium">${item.waktu ? item.waktu.split(' ')[0] : '-'}</td>
+                            <td class="border border-gray-800 px-3 py-2 text-gray-300 truncate max-w-[120px]" title="${item.noRo || '-'}">${item.noRo || '-'}</td>
+                            <td class="border border-gray-800 px-3 py-2 text-gray-300 truncate max-w-[80px]" title="${item.odf || '-'}">${item.odf || '-'}</td>
+                            <td class="border border-gray-800 px-3 py-2 font-bold text-blue-400">${inQty > 0 ? inQty : '-'}</td>
+                            <td class="border border-gray-800 px-3 py-2 font-bold text-rose-400">${outQty > 0 ? outQty : '-'}</td>
+                            <td class="border border-gray-800 px-3 py-2 font-bold text-white">${currentRunningStock}</td>
+                            <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                            <td class="border border-gray-800 px-3 py-2 text-gray-300 truncate max-w-[150px]" title="${item.keterangan || '-'}">${item.keterangan || '-'}</td>
+                            <td class="border border-gray-800 px-3 py-2 text-gray-400 text-[10px] truncate max-w-[120px]" title="${item.noRo || '-'}">${item.noRo || '-'}</td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+            })
+            .catch(err => {
+                tbody.innerHTML = `<tr><td colspan="9" class="py-10 text-rose-500 font-bold">Gagal memuat history stok: ${err.message}</td></tr>`;
+            });
+        }
+
+        function closeKartuStokModal() {
+            document.getElementById('modal-kartu-stok').classList.add('hidden');
+        }
+
+        function exportKartuStokCSV() {
+            if (!currentKartuStokInfo.pn) return showToast("Gagal", "Tidak ada data kartu stok.", "error");
+            showLoading(true, "Mempersiapkan File CSV...");
+            
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += `KARTU STOK MATERIAL\r\n`;
+            csvContent += `Model:,${currentKartuStokInfo.model}\r\n`;
+            csvContent += `PN:,${currentKartuStokInfo.pn}\r\n`;
+            csvContent += `Nama Material:,${currentKartuStokInfo.material}\r\n`;
+            csvContent += `Lokasi:,${currentKartuStokInfo.lokasi}\r\n\r\n`;
+            
+            csvContent += "Tanggal,Order/Contract Number,LOT,Masuk,Keluar,Total Stok,PCS CTN,Keterangan,No INT/RO/SHORTAGE\r\n";
+            
+            const rows = document.querySelectorAll('#ks-body tr');
+            rows.forEach(tr => {
+                if (tr.children.length > 1) {
+                    const rowData = [];
+                    for(let i=0; i<tr.children.length; i++) {
+                        let text = tr.children[i].innerText.replace(/"/g, '""');
+                        rowData.push(`"${text}"`);
+                    }
+                    csvContent += rowData.join(",") + "\r\n";
+                }
+            });
+
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", `Kartu_Stok_${currentKartuStokInfo.pn}_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showLoading(false);
+            showToast("Sukses", "Kartu Stok berhasil diunduh.", "success");
+        }
+
 
         function renderPagination(containerId, currentPage, totalPages, totalItems, functionName) {
             const container = document.getElementById(containerId);
@@ -2116,8 +2682,24 @@
             
             if (matches.length > 0) {
                 mod.value = matches[0].model; mat.value = matches[0].description;
-                const loks = [...new Set(matches.map(m=>m.lokasi?.split(',').map(l=>l.trim())).flat().filter(Boolean))];
-                const cLok = lok.value; lok.innerHTML = loks.length===0 ? '<option value="" disabled selected>Tidak ada</option>' : '<option value="" disabled>-- Pilih Lokasi --</option>' + loks.map(l=>`<option value="${l}" ${l===cLok?'selected':''}>${l}</option>`).join('');
+                let loks = [...new Set(matches.map(m=>m.lokasi?.split(',').map(l=>l.trim())).flat().filter(Boolean))];
+                
+                // Filter dropdown lokasi berdasarkan Brand PIC untuk Role OPERATOR
+                const roleUpper = getRoleUpper();
+                if (roleUpper === 'OPERATOR') {
+                    const uname = (currentUser?.username || '').toUpperCase();
+                    let userBrand = '';
+                    if (uname.includes('HSE')) userBrand = 'HSE';
+                    else if (uname.includes('TSB')) userBrand = 'TSB';
+                    else if (uname.includes('TCL')) userBrand = 'TCL';
+                    else if (uname.includes('IFPD')) userBrand = 'IFPD';
+                    
+                    if (userBrand) {
+                        loks = loks.filter(l => l.toUpperCase().startsWith(userBrand));
+                    }
+                }
+
+                const cLok = lok.value; lok.innerHTML = loks.length===0 ? '<option value="" disabled selected>Tidak ada izin/lokasi</option>' : '<option value="" disabled>-- Pilih Lokasi --</option>' + loks.map(l=>`<option value="${l}" ${l===cLok?'selected':''}>${l}</option>`).join('');
                 if(loks.includes(cLok)) lok.value=cLok; else if(loks.length===1) lok.value=loks[0]; else lok.selectedIndex=0;
                 updateRowStockInfo(rowId); validateRowStock(rowId);
             } else {
@@ -2140,6 +2722,23 @@
                 if (!lok) { validationError = `Baris #${i+1}: Pilih lokasi!`; break; }
                 if (yp===0 && ys===0) { validationError = `Baris #${i+1}: Masukkan Qty!`; break; }
                 
+                // Pengecekan Hak Akses Brand PIC
+                const roleUpper = getRoleUpper();
+                if (roleUpper === 'OPERATOR') {
+                    const uname = (currentUser?.username || '').toUpperCase();
+                    const locUpper = lok.toUpperCase();
+                    let userBrand = '';
+                    if (uname.includes('HSE')) userBrand = 'HSE';
+                    else if (uname.includes('TSB')) userBrand = 'TSB';
+                    else if (uname.includes('TCL')) userBrand = 'TCL';
+                    else if (uname.includes('IFPD')) userBrand = 'IFPD';
+
+                    if (userBrand && !locUpper.startsWith(userBrand)) {
+                        validationError = `Baris #${i+1}: Akses Ditolak! PIC Brand ${userBrand} tidak memiliki izin transaksi di lokasi ${lok}.`;
+                        break;
+                    }
+                }
+
                 // Pengecekan hanya untuk yang selain "NG Pending" dan "Dipakai Shortage" saat tipe-nya "OUT"
                 if (type === "OUT" && ket !== 'NG Pending' && ket !== 'Dipakai Shortage') {
                     const match = autocompleteCache.find(x => String(x.lokasi).trim().toLowerCase() === lok.trim().toLowerCase() && isRowMatch(x, pn));
