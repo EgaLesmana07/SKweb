@@ -1302,6 +1302,9 @@
         let currentBrandModel = '';
         let currentBrandSearch = '';
 
+        let qrBrandToOpen = null;
+        let qrModelToOpen = null;
+
         let transRows = [];
         let transRowCounter = 0;
         
@@ -1323,6 +1326,14 @@
         function getRoleUpper() { return String(currentRole || 'Guest').trim().replace(/\s+/g, '').toUpperCase(); }
 
         document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('brand') && urlParams.has('model')) {
+                qrBrandToOpen = urlParams.get('brand');
+                qrModelToOpen = urlParams.get('model');
+                // Hapus param dari URL bar agar tidak nyangkut saat refresh
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
             updateClock();
             setInterval(updateClock, 1000);
             checkSavedSession();
@@ -1665,6 +1676,8 @@
         }
 
         function restoreLastTab() {
+            if (qrBrandToOpen && qrModelToOpen) return; // Abaikan restoreLastTab jika user masuk dari Scan QR
+
             let savedTab = localStorage.getItem('sk_active_tab') || 'dashboard';
             const roleUpper = getRoleUpper();
 
@@ -1899,7 +1912,21 @@
         function loadInitialData() {
             showLoading(true, "Memuat Data Warehouse...");
             const roleUpper = getRoleUpper(); let totalSteps = roleUpper === 'GUEST' ? 5 : (roleUpper === 'SUPERADMIN' ? 11 : 10); let counter = 0;
-            const checkDone = () => { counter++; if (counter >= totalSteps) showLoading(false); };
+            const checkDone = () => { 
+                counter++; 
+                if (counter >= totalSteps) {
+                    showLoading(false); 
+                    // Auto-buka QR Link setelah semua data selesai dimuat
+                    if (qrBrandToOpen && qrModelToOpen) {
+                        switchBrand(qrBrandToOpen);
+                        setTimeout(() => {
+                            openBrandModelDetail(qrModelToOpen);
+                            qrBrandToOpen = null;
+                            qrModelToOpen = null;
+                        }, 500);
+                    }
+                } 
+            };
 
             refreshAutocomplete(() => checkDone()); fetchDatabase(1, () => checkDone()); fetchHistory(1, () => checkDone()); fetchHistoryNg(1, () => checkDone()); fetchHistoryShortage(1, () => checkDone());
             if (roleUpper !== 'GUEST') { fetchBackup(1, () => checkDone()); fetchPending(1, () => checkDone()); fetchNgPending(1, () => checkDone()); fetchShortagePending(1, () => checkDone()); }
@@ -2124,6 +2151,9 @@
                                     <div class="min-w-0">
                                         <h3 class="text-base sm:text-xl font-black text-gray-800 flex items-center gap-2 truncate">
                                             <i class="fa-solid fa-desktop text-blue-600"></i> MODEL: <span id="brand-detail-model-name" class="truncate">32A4200G</span>
+                                            <button onclick="generateAndShowQR()" class="ml-2 bg-blue-100 hover:bg-blue-200 text-blue-600 w-8 h-8 rounded-lg flex items-center justify-center transition-colors shadow-sm shrink-0" title="Tampilkan QR Code Model">
+                                                <i class="fa-solid fa-qrcode"></i>
+                                            </button>
                                         </h3>
                                         <p class="text-xs text-gray-500 mt-1 truncate">Daftar part/material untuk model ini. Klik Kartu Stok untuk melihat lembar kerja.</p>
                                     </div>
@@ -3280,6 +3310,38 @@
             
             document.getElementById('confirm-modal-desc').innerText = `Hapus secara permanen ${ids.length} data yang dipilih?`;
             document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        // ==========================================
+        // --- FITUR QR CODE (BARCODE) ---
+        // ==========================================
+        function generateAndShowQR() {
+            if (!currentBrand || !currentBrandModel) {
+                showToast("Gagal", "Tidak ada model yang dipilih.", "error");
+                return;
+            }
+            
+            // Build the URL yang berisikan referensi ke Brand dan Model
+            const url = new URL(window.location.origin + window.location.pathname);
+            url.searchParams.set('brand', currentBrand);
+            url.searchParams.set('model', currentBrandModel);
+            
+            // Generate QR Code menggunakan API
+            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url.toString())}&margin=10`;
+            
+            document.getElementById('qrModelText').innerText = `Model: ${currentBrandModel} (${currentBrand})`;
+            document.getElementById('qrImage').src = qrImageUrl;
+            
+            const modal = document.getElementById('qrModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeQrModal() {
+            const modal = document.getElementById('qrModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('qrImage').src = ""; 
         }
 
     </script>
