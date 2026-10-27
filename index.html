@@ -268,7 +268,7 @@
                     <div class="p-3.5 sm:p-5 border-b border-gray-50 flex flex-col sm:flex-row gap-3 justify-between sm:items-center bg-gray-50/30 shrink-0">
                         <div class="relative w-full sm:w-80 md:w-96">
                             <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-                            <input type="text" id="search-db" onkeyup="handleSearchDB()" placeholder="Cari PN, Model, Lokasi..." class="w-full pl-11 pr-4 py-2.5 rounded-xl border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none text-xs sm:text-sm font-medium">
+                            <input type="text" id="search-db" onkeyup="handleSearchDB()" placeholder="Cari PN, Model, Lokasi,..." class="w-full pl-11 pr-4 py-2.5 rounded-xl border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 outline-none text-xs sm:text-sm font-medium">
                         </div>
                         <button id="btn-add-database-wrapper" onclick="openModal()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shadow-sm shrink-0">
                             <i class="fa-solid fa-plus text-xs"></i> Tambah Data Baru
@@ -1195,7 +1195,7 @@
         </div>
     </div>
      <!-- Modal QR Code / Barcode -->
-    <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-70 hidden flex-col items-center justify-center z-50 transition-opacity">
+    <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-70 hidden flex-col items-center justify-center z-[250] transition-opacity">
         <div class="bg-[#0f172a] text-white p-6 rounded-xl border border-slate-700 shadow-2xl w-11/12 max-w-sm text-center relative">
             <button onclick="closeQrModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -1227,7 +1227,11 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 mb-4 text-sm text-white font-bold">
                 <div class="flex"><span class="w-32 inline-block text-gray-300">Model</span><span class="mr-2">:</span><span id="ks-model">-</span></div>
-                <div class="flex md:justify-end"><span id="ks-lokasi" class="bg-blue-900 text-blue-200 px-3 py-1 rounded text-xs border border-blue-700">Lokasi: -</span></div>
+                <div class="flex md:justify-end">
+                    <button onclick="generateAndShowKsQR()" class="bg-blue-900 hover:bg-blue-800 text-blue-200 px-3 py-1 rounded text-xs border border-blue-700 flex items-center gap-1.5 transition-colors shadow-sm">
+                        <i class="fa-solid fa-qrcode"></i> QR Kartu Stok
+                    </button>
+                </div>
                 <div class="flex"><span class="w-32 inline-block text-gray-300">PN</span><span class="mr-2">:</span><span id="ks-pn">-</span></div>
                 <div class="flex"><span class="w-32 inline-block text-gray-300">Nama Material</span><span class="mr-2">:</span><span id="ks-material">-</span></div>
             </div>
@@ -1327,7 +1331,14 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('brand') && urlParams.has('model')) {
+            if (urlParams.has('action') && urlParams.get('action') === 'kartustok') {
+                window.qrKsPn = urlParams.get('pn');
+                window.qrKsLokasi = urlParams.get('lokasi');
+                window.qrKsModel = urlParams.get('model');
+                window.qrKsMaterial = urlParams.get('material');
+                window.qrKsBrand = urlParams.get('brand');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (urlParams.has('brand') && urlParams.has('model')) {
                 qrBrandToOpen = urlParams.get('brand');
                 qrModelToOpen = urlParams.get('model');
                 // Hapus param dari URL bar agar tidak nyangkut saat refresh
@@ -1801,6 +1812,23 @@
             }
         }
 
+        function toggleHistorySubmenu() {
+            isHistorySubmenuOpen = !isHistorySubmenuOpen;
+            const submenu = document.getElementById('submenu-history');
+            const chevron = document.getElementById('icon-history-chevron');
+            if(submenu && chevron) {
+                if(isHistorySubmenuOpen) {
+                    submenu.classList.remove('hidden');
+                    submenu.classList.add('flex');
+                    chevron.classList.add('rotate-180');
+                } else {
+                    submenu.classList.add('hidden');
+                    submenu.classList.remove('flex');
+                    chevron.classList.remove('rotate-180');
+                }
+            }
+        }
+
         function renderProfileSection() {
             const section = document.getElementById('sidebar-user-section');
             if (isLoggedIn && currentUser) {
@@ -1917,7 +1945,13 @@
                 if (counter >= totalSteps) {
                     showLoading(false); 
                     // Auto-buka QR Link setelah semua data selesai dimuat
-                    if (qrBrandToOpen && qrModelToOpen) {
+                    if (window.qrKsPn) {
+                        if (window.qrKsBrand) switchBrand(window.qrKsBrand);
+                        setTimeout(() => {
+                            openKartuStok(window.qrKsPn, window.qrKsLokasi, window.qrKsModel, window.qrKsMaterial);
+                            window.qrKsPn = null;
+                        }, 800);
+                    } else if (qrBrandToOpen && qrModelToOpen) {
                         switchBrand(qrBrandToOpen);
                         setTimeout(() => {
                             openBrandModelDetail(qrModelToOpen);
@@ -2355,7 +2389,6 @@
         function openKartuStok(pn, lokasi, model, material) {
             document.getElementById('ks-model').innerText = model || '-';
             document.getElementById('ks-pn').innerText = pn || '-';
-            document.getElementById('ks-lokasi').innerText = `Lokasi: ${lokasi || '-'}`;
             document.getElementById('ks-material').innerText = material || '-';
             
             currentKartuStokInfo = { pn, lokasi, model, material };
@@ -2377,14 +2410,14 @@
                 if (!data || data.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                            <td class="border border-gray-800 px-3 py-2 font-medium">18/10/2026</td>
                             <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
                             <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
                             <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
                             <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
                             <td class="border border-gray-800 px-3 py-2 font-bold text-white">${currentTotalMaster}</td>
                             <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
-                            <td class="border border-gray-800 px-3 py-2 text-emerald-500 font-bold">INITIAL STOCK / STOK AWAL</td>
+                            <td class="border border-gray-800 px-3 py-2 text-emerald-500 font-bold">STOK AWAL</td>
                             <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
                         </tr>
                     `;
@@ -2408,14 +2441,14 @@
                 // 2. Render baris INITIAL STOCK di paling atas
                 let html = `
                     <tr class="bg-gray-900/50">
-                        <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
+                        <td class="border border-gray-800 px-3 py-2 font-medium text-gray-300">18/10/2026</td>
                         <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
                         <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
                         <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
                         <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
                         <td class="border border-gray-800 px-3 py-2 font-bold text-white">${initialStock}</td>
                         <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
-                        <td class="border border-gray-800 px-3 py-2 text-emerald-500 font-bold tracking-wide">INITIAL STOCK / STOK AWAL</td>
+                        <td class="border border-gray-800 px-3 py-2 text-emerald-500 font-bold tracking-wide">STOK AWAL</td>
                         <td class="border border-gray-800 px-3 py-2 text-gray-500">-</td>
                     </tr>
                 `;
@@ -3330,6 +3363,30 @@
             const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url.toString())}&margin=10`;
             
             document.getElementById('qrModelText').innerText = `Model: ${currentBrandModel} (${currentBrand})`;
+            document.getElementById('qrImage').src = qrImageUrl;
+            
+            const modal = document.getElementById('qrModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function generateAndShowKsQR() {
+            if (!currentKartuStokInfo.pn) {
+                showToast("Gagal", "Tidak ada data kartu stok.", "error");
+                return;
+            }
+            
+            const url = new URL(window.location.origin + window.location.pathname);
+            url.searchParams.set('action', 'kartustok');
+            url.searchParams.set('pn', currentKartuStokInfo.pn);
+            url.searchParams.set('lokasi', currentKartuStokInfo.lokasi);
+            url.searchParams.set('model', currentKartuStokInfo.model);
+            url.searchParams.set('material', currentKartuStokInfo.material);
+            url.searchParams.set('brand', currentBrand);
+            
+            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url.toString())}&margin=10`;
+            
+            document.getElementById('qrModelText').innerText = `Kartu Stok PN: ${currentKartuStokInfo.pn}`;
             document.getElementById('qrImage').src = qrImageUrl;
             
             const modal = document.getElementById('qrModal');
