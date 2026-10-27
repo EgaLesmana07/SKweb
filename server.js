@@ -577,6 +577,57 @@ app.put('/api/history/:rowNum', async (req, res) => {
   }
 });
 
+// API MENGHAPUS SATU LOG HISTORY (DENGAN REVERT STOK MASTER)
+app.delete('/api/history/:rowNum', async (req, res) => {
+  try {
+    const rowNum = req.params.rowNum;
+    const { data: item, error: fetchErr } = await supabase
+      .from('data_history_sc')
+      .select('*')
+      .eq('id', rowNum)
+      .single();
+
+    if (fetchErr || !item) {
+      return res.status(404).json({ success: false, message: 'Data history tidak ditemukan' });
+    }
+
+    // Revert stok di Master Database
+    const { data: mRow } = await supabase
+      .from('data_master')
+      .select('id, yp, ys')
+      .eq('pn', item.pn)
+      .eq('lokasi', item.lokasi)
+      .maybeSingle();
+
+    if (mRow) {
+      let newYP = Number(mRow.yp) || 0;
+      let newYS = Number(mRow.ys) || 0;
+      if (item.in_out === 'IN') {
+        newYP = Math.max(0, newYP - (Number(item.yp) || 0));
+        newYS = Math.max(0, newYS - (Number(item.ys) || 0));
+      } else if (item.in_out === 'OUT') {
+        newYP += (Number(item.yp) || 0);
+        newYS += (Number(item.ys) || 0);
+      }
+      await supabase
+        .from('data_master')
+        .update({ yp: newYP, ys: newYS, total: newYP + newYS })
+        .eq('id', mRow.id);
+    }
+
+    const { error: delErr } = await supabase
+      .from('data_history_sc')
+      .delete()
+      .eq('id', rowNum);
+
+    if (delErr) throw delErr;
+
+    res.json({ success: true, message: 'Data history berhasil dihapus dan stok master disesuaikan kembali!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Gagal menghapus log history', error: err.message });
+  }
+});
+
 
 // ==========================================
 // --- API SC PENDING (PROSES OUT) ---
@@ -975,11 +1026,33 @@ app.get('/api/history-shortage', async (req, res) => {
 // --- API BULK ACTIONS (APPROVE & DELETE) ---
 // ==========================================
 
-// API BULK DELETE (Global untuk Pending & History)
+// API BULK DELETE (Global untuk Pending & History dengan Revert Stok)
 app.post('/api/bulk-delete', async (req, res) => {
   const { table, ids } = req.body;
   if (!table || !ids || !ids.length) return res.status(400).json({ success: false, message: 'Data tidak valid' });
   try {
+      // Revert Stok jika tabel yang dihapus adalah History SC
+      if (table === 'data_history_sc') {
+        for (const id of ids) {
+          const { data: item } = await supabase.from('data_history_sc').select('*').eq('id', id).maybeSingle();
+          if (item) {
+            const { data: mRow } = await supabase.from('data_master').select('id, yp, ys').eq('pn', item.pn).eq('lokasi', item.lokasi).maybeSingle();
+            if (mRow) {
+              let newYP = Number(mRow.yp) || 0;
+              let newYS = Number(mRow.ys) || 0;
+              if (item.in_out === 'IN') {
+                newYP = Math.max(0, newYP - (Number(item.yp) || 0));
+                newYS = Math.max(0, newYS - (Number(item.ys) || 0));
+              } else if (item.in_out === 'OUT') {
+                newYP += (Number(item.yp) || 0);
+                newYS += (Number(item.ys) || 0);
+              }
+              await supabase.from('data_master').update({ yp: newYP, ys: newYS, total: newYP + newYS }).eq('id', mRow.id);
+            }
+          }
+        }
+      }
+
       const { error } = await supabase.from(table).delete().in('id', ids);
       if (error) throw error;
       res.json({ success: true, message: `${ids.length} data berhasil dihapus.` });

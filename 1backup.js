@@ -370,6 +370,19 @@ app.post('/api/database', async (req, res) => {
   const ysVal = parseInt(ys) || 0;
 
   try {
+    // CEK DUPLIKASI DATA SEBELUM INSERT
+    const { data: existingItem, error: checkError } = await supabase
+      .from('data_master')
+      .select('id')
+      .eq('pn', pn)
+      .eq('lokasi', lokasi)
+      .maybeSingle();
+
+    if (checkError) throw checkError;
+    if (existingItem) {
+      return res.status(400).json({ success: false, message: `Data dengan PN '${pn}' di lokasi '${lokasi}' sudah terdaftar!` });
+    }
+
     const { data, error } = await supabase
       .from('data_master')
       .insert([{ lokasi, model, pn, pn1, description, yp: ypVal, ys: ysVal, total: ypVal + ysVal }])
@@ -390,6 +403,20 @@ app.put('/api/database/:rowNum', async (req, res) => {
   const ysVal = parseInt(ys) || 0;
 
   try {
+    // CEK DUPLIKASI DATA (Kecuali baris ini sendiri)
+    const { data: existingItem, error: checkError } = await supabase
+      .from('data_master')
+      .select('id')
+      .eq('pn', pn)
+      .eq('lokasi', lokasi)
+      .neq('id', req.params.rowNum)
+      .maybeSingle();
+
+    if (checkError) throw checkError;
+    if (existingItem) {
+      return res.status(400).json({ success: false, message: `Gagal Update. Data dengan PN '${pn}' di lokasi '${lokasi}' sudah digunakan oleh item lain!` });
+    }
+
     const { error } = await supabase
       .from('data_master')
       .update({ lokasi, model, pn, pn1, description, yp: ypVal, ys: ysVal, total: ypVal + ysVal })

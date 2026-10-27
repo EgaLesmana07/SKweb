@@ -7,6 +7,8 @@
     <link class="rounded-xl" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%232563eb%22/><text x=%2250%22 y=%2250%22 font-family=%22Plus Jakarta Sans, Arial%22 font-size=%2250%22 font-weight=%22bold%22 fill=%22white%22 text-anchor=%22middle%22 dominant-baseline=%22central%22>SK</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -1215,8 +1217,8 @@
     </div>
     <!-- Modal Kartu Stok (Khusus Brand) -->
     <div id="modal-kartu-stok" class="hidden fixed inset-0 z-[180] flex items-center justify-center p-4 modal-overlay animate-fade-in">
-        <div class="bg-black w-full max-w-5xl rounded-2xl p-6 shadow-2xl scale-in max-h-[90dvh] flex flex-col relative overflow-hidden border border-gray-800">
-            <button onclick="closeKartuStokModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10 bg-gray-900 rounded-full w-8 h-8 flex items-center justify-center border border-gray-700">
+        <div id="ks-print-area" class="bg-black w-full max-w-5xl rounded-2xl p-6 shadow-2xl scale-in max-h-[90dvh] flex flex-col relative overflow-hidden border border-gray-800">
+            <button id="btn-ks-close" onclick="closeKartuStokModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10 bg-gray-900 rounded-full w-8 h-8 flex items-center justify-center border border-gray-700">
                 <i class="fa-solid fa-xmark"></i>
             </button>
             
@@ -1228,7 +1230,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 mb-4 text-sm text-white font-bold">
                 <div class="flex"><span class="w-32 inline-block text-gray-300">Model</span><span class="mr-2">:</span><span id="ks-model">-</span></div>
                 <div class="flex md:justify-end">
-                    <button onclick="generateAndShowKsQR()" class="bg-blue-900 hover:bg-blue-800 text-blue-200 px-3 py-1 rounded text-xs border border-blue-700 flex items-center gap-1.5 transition-colors shadow-sm">
+                    <button id="btn-ks-qr" onclick="generateAndShowKsQR()" class="bg-blue-900 hover:bg-blue-800 text-blue-200 px-3 py-1 rounded text-xs border border-blue-700 flex items-center gap-1.5 transition-colors shadow-sm">
                         <i class="fa-solid fa-qrcode"></i> QR Kartu Stok
                     </button>
                 </div>
@@ -1236,7 +1238,7 @@
                 <div class="flex"><span class="w-32 inline-block text-gray-300">Nama Material</span><span class="mr-2">:</span><span id="ks-material">-</span></div>
             </div>
 
-            <div class="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar border border-gray-700 rounded-lg">
+            <div id="ks-table-container" class="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar border border-gray-700 rounded-lg">
                 <table class="w-full text-center min-w-[900px] border-collapse bg-black text-white text-xs">
                     <thead class="sticky top-0 bg-black z-10">
                         <tr>
@@ -1260,9 +1262,12 @@
                 </table>
             </div>
 
-            <div class="mt-5 pt-4 border-t border-gray-800 flex justify-end gap-3 shrink-0">
-                <button onclick="exportKartuStokCSV()" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded-lg text-sm transition-colors shadow-lg flex items-center gap-2">
-                    <i class="fa-solid fa-file-csv"></i> Export CSV
+            <div id="ks-action-buttons" class="mt-5 pt-4 border-t border-gray-800 flex justify-end gap-3 shrink-0">
+                <button onclick="exportKartuStokExcel()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-sm transition-colors shadow-lg flex items-center gap-2">
+                    <i class="fa-solid fa-file-excel"></i> Export Excel
+                </button>
+                <button onclick="exportKartuStokPDF()" class="px-5 py-2.5 bg-rose-700 hover:bg-rose-600 text-white font-bold rounded-lg text-sm transition-colors shadow-lg flex items-center gap-2">
+                    <i class="fa-solid fa-file-pdf"></i> Export PDF
                 </button>
                 <button onclick="closeKartuStokModal()" class="px-5 py-2.5 bg-gray-200 hover:bg-white text-black font-bold rounded-lg text-sm transition-colors">
                     Tutup
@@ -2495,41 +2500,130 @@
             document.getElementById('modal-kartu-stok').classList.add('hidden');
         }
 
-        function exportKartuStokCSV() {
+        function exportKartuStokExcel() {
             if (!currentKartuStokInfo.pn) return showToast("Gagal", "Tidak ada data kartu stok.", "error");
-            showLoading(true, "Mempersiapkan File CSV...");
+            showLoading(true, "Mempersiapkan File Excel...");
+
+            const wb = XLSX.utils.book_new();
+            const wsData = [];
             
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += `KARTU STOK MATERIAL\r\n`;
-            csvContent += `Model:,${currentKartuStokInfo.model}\r\n`;
-            csvContent += `PN:,${currentKartuStokInfo.pn}\r\n`;
-            csvContent += `Nama Material:,${currentKartuStokInfo.material}\r\n`;
-            csvContent += `Lokasi:,${currentKartuStokInfo.lokasi}\r\n\r\n`;
-            
-            csvContent += "Tanggal,Order/Contract Number,LOT,Masuk,Keluar,Total Stok,PCS CTN,Keterangan,No INT/RO/SHORTAGE\r\n";
-            
-            const rows = document.querySelectorAll('#ks-body tr');
+            // Header Info
+            wsData.push(["KARTU STOK MATERIAL", "", "", "", "", "", "", "", ""]);
+            wsData.push(["NO. DOC : FR-GAS-WH-002-02 Rev.02", "", "", "", "", "", "", "", ""]);
+            wsData.push(["", "", "", "", "", "", "", "", ""]);
+            wsData.push(["Model", ":", currentKartuStokInfo.model, "", "", "", "", "", ""]);
+            wsData.push(["PN", ":", currentKartuStokInfo.pn, "", "", "", "", "", ""]);
+            wsData.push(["Nama Material", ":", currentKartuStokInfo.material, "", "", "", "", "", ""]);
+            wsData.push(["", "", "", "", "", "", "", "", ""]);
+
+            // Table Headers
+            wsData.push([
+                "Tanggal", "Order / Contract Number", "LOT", "Jumlah", "", "", "PCS CTN", "Keterangan", "No INT/RO/ SHORTAGE"
+            ]);
+            wsData.push([
+                "", "", "", "Masuk", "Keluar", "Total Stok", "", "", ""
+            ]);
+
+            // Table Body
+            const tbody = document.getElementById('ks-body');
+            const rows = tbody.querySelectorAll('tr');
             rows.forEach(tr => {
-                if (tr.children.length > 1) {
-                    const rowData = [];
-                    for(let i=0; i<tr.children.length; i++) {
-                        let text = tr.children[i].innerText.replace(/"/g, '""');
-                        rowData.push(`"${text}"`);
-                    }
-                    csvContent += rowData.join(",") + "\r\n";
+                const rowData = [];
+                const tds = tr.querySelectorAll('td');
+                if (tds.length === 1) {
+                    rowData.push(tds[0].innerText);
+                } else {
+                    tds.forEach(td => rowData.push(td.innerText));
                 }
+                wsData.push(rowData);
             });
 
-            const link = document.createElement("a");
-            link.setAttribute("href", encodeURI(csvContent));
-            link.setAttribute("download", `Kartu_Stok_${currentKartuStokInfo.pn}_${new Date().toISOString().slice(0, 10)}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+            // Styling (Merges)
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } },
+                { s: { r: 7, c: 0 }, e: { r: 8, c: 0 } },
+                { s: { r: 7, c: 1 }, e: { r: 8, c: 1 } },
+                { s: { r: 7, c: 2 }, e: { r: 8, c: 2 } },
+                { s: { r: 7, c: 3 }, e: { r: 7, c: 5 } },
+                { s: { r: 7, c: 6 }, e: { r: 8, c: 6 } },
+                { s: { r: 7, c: 7 }, e: { r: 8, c: 7 } },
+                { s: { r: 7, c: 8 }, e: { r: 8, c: 8 } }
+            ];
+
+            // Column Widths
+            ws['!cols'] = [
+                { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 10 }, 
+                { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 30 }, { wch: 20 }
+            ];
+
+            XLSX.utils.book_append_sheet(wb, ws, "Kartu Stok");
+            XLSX.writeFile(wb, `Kartu_Stok_${currentKartuStokInfo.pn}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+            
             showLoading(false);
-            showToast("Sukses", "Kartu Stok berhasil diunduh.", "success");
+            showToast("Sukses", "Kartu Stok berhasil diexport ke Excel.", "success");
         }
 
+        function exportKartuStokPDF() {
+            if (!currentKartuStokInfo.pn) return showToast("Gagal", "Tidak ada data kartu stok.", "error");
+            showLoading(true, "Mempersiapkan File PDF...");
+            
+            const printArea = document.getElementById('ks-print-area');
+            const btnClose = document.getElementById('btn-ks-close');
+            const btnQr = document.getElementById('btn-ks-qr');
+            const actionBtns = document.getElementById('ks-action-buttons');
+            const tableContainer = document.getElementById('ks-table-container');
+
+            // Simpan state class original
+            const originalPrintAreaClass = printArea.className;
+            const originalTableContainerClass = tableContainer.className;
+
+            // Sembunyikan elemen yang tidak diinginkan di PDF menggunakan inline style agar aman
+            if (btnClose) btnClose.style.display = 'none';
+            if (btnQr) btnQr.style.display = 'none';
+            if (actionBtns) actionBtns.style.display = 'none';
+
+            // Hapus limitasi scroll agar tabel ter-render penuh ke bawah di halaman PDF
+            printArea.classList.remove('max-h-[90dvh]', 'overflow-hidden');
+            tableContainer.classList.remove('overflow-y-auto', 'overflow-x-auto', 'custom-scrollbar', 'flex-1');
+
+            // Opsi untuk PDF Generator
+            const opt = {
+                margin:       [10, 10, 10, 10], 
+                filename:     `Kartu_Stok_${currentKartuStokInfo.pn}_${new Date().toISOString().slice(0, 10)}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, backgroundColor: '#000000', useCORS: true }, 
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' } 
+            };
+
+            // Generate dan simpan menggunakan html2pdf
+            html2pdf().set(opt).from(printArea).save().then(() => {
+                // Kembalikan UI seperti semula setelah PDF diunduh
+                if (btnClose) btnClose.style.display = '';
+                if (btnQr) btnQr.style.display = '';
+                if (actionBtns) actionBtns.style.display = '';
+                
+                printArea.className = originalPrintAreaClass;
+                tableContainer.className = originalTableContainerClass;
+
+                showLoading(false);
+                showToast("Sukses", "Kartu Stok berhasil diexport ke PDF.", "success");
+            }).catch(err => {
+                // Kembalikan UI jika terjadi error
+                if (btnClose) btnClose.style.display = '';
+                if (btnQr) btnQr.style.display = '';
+                if (actionBtns) actionBtns.style.display = '';
+                
+                printArea.className = originalPrintAreaClass;
+                tableContainer.className = originalTableContainerClass;
+
+                showLoading(false);
+                showToast("Error", "Gagal meng-export PDF.", "error");
+                console.error(err);
+            });
+        }
 
         function renderPagination(containerId, currentPage, totalPages, totalItems, functionName) {
             const container = document.getElementById(containerId);
@@ -2683,7 +2777,11 @@
             const pn = pnInput.value.trim(), lok = lokSel.value;
             if (pn.length < 2) { infoDiv.innerText = "Masukkan PN..."; return; }
             
-            let matches = autocompleteCache.filter(x => isRowMatch(x, pn));
+            // PRIORITAS 1: Cari yang PN-nya sama persis (Exact Match)
+            let exactMatches = autocompleteCache.filter(x => String(x.pn).trim().toLowerCase() === pn.toLowerCase());
+            // Jika exact match ada, gunakan itu. Jika tidak ada, fallback ke pencarian loose/longgar
+            let matches = exactMatches.length > 0 ? exactMatches : autocompleteCache.filter(x => isRowMatch(x, pn));
+            
             if (matches.length === 0) { infoDiv.innerHTML = `<span class="text-rose-500 italic font-bold">PN tidak ditemukan</span>`; return; }
             let selMatch = lok ? matches.find(m => String(m.lokasi).trim().toLowerCase() === String(lok).trim().toLowerCase()) : null;
             if (!selMatch) selMatch = matches[0];
@@ -2740,7 +2838,10 @@
             const info = document.getElementById(`info-${rowId}`), mod = document.getElementById(`model-${rowId}`), mat = document.getElementById(`material-${rowId}`), lok = document.getElementById(`lokasi-${rowId}`), dl = document.getElementById(`dl-pn-${rowId}`);
             if (val.trim().length < 2) { info.innerText="Masukkan PN..."; mod.value=""; mat.value=""; lok.innerHTML='<option value="" disabled selected>Pilih...</option>'; if(dl) dl.innerHTML=""; return; }
             
-            const matches = autocompleteCache.filter(x => isRowMatch(x, val));
+            // PRIORITAS 1: Cari yang PN-nya sama persis untuk meminimalisir salah model
+            let exactMatches = autocompleteCache.filter(x => String(x.pn).trim().toLowerCase() === val.trim().toLowerCase());
+            const matches = exactMatches.length > 0 ? exactMatches : autocompleteCache.filter(x => isRowMatch(x, val));
+            
             if (dl) dl.innerHTML = [...new Set(matches.map(x=>x.pn))].slice(0, 10).map(pn=>`<option value="${pn}"></option>`).join('');
             
             if (matches.length > 0) {
