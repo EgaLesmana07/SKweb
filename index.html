@@ -2777,7 +2777,11 @@
             const pn = pnInput.value.trim(), lok = lokSel.value;
             if (pn.length < 2) { infoDiv.innerText = "Masukkan PN..."; return; }
             
-            let matches = autocompleteCache.filter(x => isRowMatch(x, pn));
+            // PRIORITAS 1: Cari yang PN-nya sama persis (Exact Match)
+            let exactMatches = autocompleteCache.filter(x => String(x.pn).trim().toLowerCase() === pn.toLowerCase());
+            // Jika exact match ada, gunakan itu. Jika tidak ada, fallback ke pencarian loose/longgar
+            let matches = exactMatches.length > 0 ? exactMatches : autocompleteCache.filter(x => isRowMatch(x, pn));
+            
             if (matches.length === 0) { infoDiv.innerHTML = `<span class="text-rose-500 italic font-bold">PN tidak ditemukan</span>`; return; }
             let selMatch = lok ? matches.find(m => String(m.lokasi).trim().toLowerCase() === String(lok).trim().toLowerCase()) : null;
             if (!selMatch) selMatch = matches[0];
@@ -2834,7 +2838,10 @@
             const info = document.getElementById(`info-${rowId}`), mod = document.getElementById(`model-${rowId}`), mat = document.getElementById(`material-${rowId}`), lok = document.getElementById(`lokasi-${rowId}`), dl = document.getElementById(`dl-pn-${rowId}`);
             if (val.trim().length < 2) { info.innerText="Masukkan PN..."; mod.value=""; mat.value=""; lok.innerHTML='<option value="" disabled selected>Pilih...</option>'; if(dl) dl.innerHTML=""; return; }
             
-            const matches = autocompleteCache.filter(x => isRowMatch(x, val));
+            // PRIORITAS 1: Cari yang PN-nya sama persis untuk meminimalisir salah model
+            let exactMatches = autocompleteCache.filter(x => String(x.pn).trim().toLowerCase() === val.trim().toLowerCase());
+            const matches = exactMatches.length > 0 ? exactMatches : autocompleteCache.filter(x => isRowMatch(x, val));
+            
             if (dl) dl.innerHTML = [...new Set(matches.map(x=>x.pn))].slice(0, 10).map(pn=>`<option value="${pn}"></option>`).join('');
             
             if (matches.length > 0) {
